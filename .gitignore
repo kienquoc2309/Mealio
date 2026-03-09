@@ -1,0 +1,26 @@
+# node
+**/node_modules
+
+# build
+**/dist
+**/build
+
+# env
+**/.env
+**/.env.local
+**/.env.*.local
+
+# logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+.idea
+
+# coverage
+**/coverage
