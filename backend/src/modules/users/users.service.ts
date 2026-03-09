@@ -20,7 +20,10 @@ export class UsersService {
     return { success: true, user };
   }
 
-  async updateProfile(userId: string, data: { name?: string }) {
+  async updateProfile(
+    userId: string,
+    data: { name?: string; phone?: string; address?: string },
+  ) {
     const user = await this.userModel
       .findByIdAndUpdate(userId, data, { new: true })
       .select('-password')

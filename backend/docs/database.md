@@ -47,6 +47,9 @@ Stores all registered users and their cart data.
 
   role: "user" | "admin"
 
+  phone: string
+  address: string
+
   cart: [
     {
       foodId: ObjectId

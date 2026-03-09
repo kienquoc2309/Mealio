@@ -32,6 +32,12 @@ export class User {
   @Prop({ type: String, enum: ['user', 'admin'], default: 'user' })
   role!: string;
 
+  @Prop()
+  phone?: string;
+
+  @Prop()
+  address?: string;
+
   @Prop({ type: [{ foodId: { type: Types.ObjectId, ref: 'Food' }, quantity: Number }], default: [] })
   cart!: CartItem[];
 }
