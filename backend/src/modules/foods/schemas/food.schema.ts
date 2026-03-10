@@ -22,6 +22,15 @@ export class Food {
 
   @Prop({ default: true, index: true })
   isAvailable!: boolean;
+
+  @Prop({ default: 0 })
+  rating!: number;
+
+  @Prop({ default: 0 })
+  reviews!: number;
+
+  @Prop({ default: null })
+  tag?: string;
 }
 
 export const FoodSchema = SchemaFactory.createForClass(Food);

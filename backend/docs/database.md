@@ -161,6 +161,10 @@ Stores all available food items.
 
   isAvailable: boolean;
 
+  rating: number;
+  reviews: number;
+  tag?: string;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -170,6 +174,9 @@ Stores all available food items.
 
 - `categoryId` references `categories._id`
 - `isAvailable` determines whether the food can be ordered
+- `rating` stores the average rating (0–5), defaults to 0
+- `reviews` stores the total number of reviews, defaults to 0
+- `tag` is an optional label (e.g. "Best Seller", "Popular", "Chef's Pick")
 
 ### Recommended Indexes
 

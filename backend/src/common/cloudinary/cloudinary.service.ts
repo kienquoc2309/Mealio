@@ -7,13 +7,26 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Multer } from 'multer';
 
+export type CloudinaryFolder = 'foods' | 'category' | 'users';
+
 @Injectable()
 export class CloudinaryService {
-  async uploadImage(file: Express.Multer.File): Promise<UploadApiResponse> {
+  async uploadImage(
+    file: Express.Multer.File,
+    folder: CloudinaryFolder,
+    publicId?: string,
+  ): Promise<UploadApiResponse> {
     return new Promise((resolve, reject) => {
+      const options: Record<string, unknown> = {
+        folder: `Mealio/${folder}`,
+        overwrite: true,
+      };
+      if (publicId) {
+        options.public_id = publicId;
+      }
       cloudinary.uploader
         .upload_stream(
-          { folder: 'mealio' },
+          options,
           (
             error: UploadApiErrorResponse | undefined,
             result: UploadApiResponse | undefined,
