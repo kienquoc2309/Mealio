@@ -55,7 +55,7 @@ function profileToCurrentUser(profile: UserProfile): CurrentUser {
 
 export const useAuthStore = defineStore('auth', () => {
   const currentUser = ref<CurrentUser | null>(null)
-  const theme = ref<Theme>('light')
+  const theme = ref<Theme>((localStorage.getItem('mealio-theme') as Theme) || 'light')
   const orders = ref<Order[]>([...mockOrders])
   const loading = ref(false)
 
@@ -149,6 +149,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const toggleTheme = () => {
     theme.value = theme.value === 'light' ? 'dark' : 'light'
+    localStorage.setItem('mealio-theme', theme.value)
   }
 
   const updateOrderStatus = (orderId: string, status: OrderStatus) => {

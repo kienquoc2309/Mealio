@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
   ShoppingCart, Search, User, Menu, X,
-  Sun, Moon, LogOut, Package, Settings, Shield, ChevronDown,
+  LogOut, Package, Settings, Shield, ChevronDown,
 } from 'lucide-vue-next'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
@@ -27,6 +27,56 @@ const navLinks = [
   { label: 'Mobile App', path: '/mobile-app' },
   { label: 'Contact Us', path: '/contact' },
 ]
+
+const scrolled = ref(false)
+const isDark = computed(() => auth.theme === 'dark')
+
+// Only allow transparent header on pages with a full-viewport dark hero
+const isHeroPage = computed(() => route.path === '/')
+const isTransparent = computed(() => isHeroPage.value && !scrolled.value)
+
+const handleScrollEvent = () => { scrolled.value = window.scrollY > 40 }
+onMounted(() => { window.addEventListener('scroll', handleScrollEvent); handleScrollEvent() })
+onUnmounted(() => { window.removeEventListener('scroll', handleScrollEvent) })
+
+const headerStyle = computed(() => {
+  if (!isTransparent.value) {
+    return {
+      background: isDark.value ? 'rgba(10,26,15,0.9)' : 'rgba(248,253,249,0.85)',
+      backdropFilter: 'blur(16px)',
+      borderBottom: `1px solid ${isDark.value ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+      boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+    }
+  }
+  return {
+    background: 'transparent',
+    backdropFilter: 'none',
+    borderBottom: '1px solid transparent',
+    boxShadow: 'none',
+  }
+})
+
+const toggleTrackStyle = computed(() => ({
+  width: '52px',
+  height: '28px',
+  background: isDark.value
+    ? 'linear-gradient(135deg, #1a3d2b, #2D6A4F)'
+    : 'linear-gradient(135deg, #d1fae5, #6ee7b7)',
+  border: `1.5px solid ${isDark.value ? 'rgba(82,183,136,0.3)' : 'rgba(45,106,79,0.2)'}`,
+  padding: '3px',
+  boxShadow: isDark.value
+    ? '0 0 12px rgba(82,183,136,0.2)'
+    : '0 2px 8px rgba(0,0,0,0.1)',
+}))
+
+const toggleThumbStyle = computed(() => ({
+  width: '22px',
+  height: '22px',
+  background: isDark.value ? '#52b788' : '#2D6A4F',
+  left: isDark.value ? 'calc(100% - 25px)' : '3px',
+  transition: 'left 0.4s cubic-bezier(0.34,1.56,0.64,1), background 0.4s',
+  boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+}))
 
 const isActive = (path: string) => route.path === path
 
@@ -72,21 +122,16 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <header class="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-sm border-b border-green-100 dark:border-gray-800">
+  <header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" :style="headerStyle">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16 lg:h-20">
         <!-- Logo -->
         <router-link to="/" class="flex items-center group">
-          <img
-            src="/mealio-horizontal.svg"
-            alt="Mealio"
-            class="h-10 dark:hidden"
-          />
-          <img
-            src="/mealio-horizontal-dark.svg"
-            alt="Mealio"
-            class="h-10 hidden dark:block"
-          />
+          <template v-if="!isTransparent">
+            <img src="/mealio-horizontal.svg" alt="Mealio" class="h-10 dark:hidden" />
+            <img src="/mealio-horizontal-dark.svg" alt="Mealio" class="h-10 hidden dark:block" />
+          </template>
+          <img v-else src="/mealio-horizontal-dark.svg" alt="Mealio" class="h-10" /><!-- transparent hero state -->
         </router-link>
 
         <!-- Desktop Nav -->
@@ -95,20 +140,21 @@ const handleLogout = async () => {
             v-for="link in navLinks"
             :key="link.path"
             :to="link.path"
-            :class="[
-              'text-sm transition-colors relative group',
-              isActive(link.path)
-                ? 'text-green-600'
-                : 'text-gray-600 dark:text-gray-300 hover:text-green-600'
-            ]"
-            :style="{ fontWeight: 500 }"
+            class="text-sm transition-all duration-300 relative group"
+            :style="{
+              color: !isTransparent
+                ? (isActive(link.path) ? (isDark ? '#52b788' : '#2D6A4F') : (isDark ? 'rgba(232,245,238,0.75)' : '#374151'))
+                : (isActive(link.path) ? '#74C69D' : 'rgba(255,255,255,0.85)'),
+              fontWeight: 600,
+            }"
           >
             {{ link.label }}
             <span
               :class="[
-                'absolute -bottom-1 left-0 h-0.5 bg-green-600 transition-all duration-300',
+                'absolute -bottom-1 left-0 h-0.5 transition-all duration-300',
                 isActive(link.path) ? 'w-full' : 'w-0 group-hover:w-full'
               ]"
+              :style="{ background: isDark ? '#52b788' : '#2D6A4F' }"
             />
           </router-link>
         </nav>
@@ -118,7 +164,8 @@ const handleLogout = async () => {
           <!-- Search -->
           <button
             @click="searchOpen = true"
-            class="p-2.5 text-gray-600 dark:text-gray-300 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-xl transition-all"
+            class="p-2.5 rounded-xl transition-all duration-300 hover:opacity-80"
+            :style="{ color: !isTransparent ? (isDark ? 'rgba(232,245,238,0.75)' : '#374151') : 'rgba(255,255,255,0.85)' }"
             title="Search dishes"
           >
             <Search class="w-5 h-5" />
@@ -127,7 +174,8 @@ const handleLogout = async () => {
           <!-- Cart -->
           <router-link
             to="/cart"
-            class="relative p-2.5 text-gray-600 dark:text-gray-300 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-xl transition-all"
+            class="relative p-2.5 rounded-xl transition-all duration-300 hover:opacity-80"
+            :style="{ color: !isTransparent ? (isDark ? 'rgba(232,245,238,0.75)' : '#374151') : 'rgba(255,255,255,0.85)' }"
             title="Cart"
           >
             <ShoppingCart class="w-5 h-5" />
@@ -148,7 +196,7 @@ const handleLogout = async () => {
               @mouseleave="handleMouseLeave"
             >
               <button
-                class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+                class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-xl transition-all duration-300"
                 @click="dropdownOpen = !dropdownOpen"
               >
                 <div
@@ -158,11 +206,12 @@ const handleLogout = async () => {
                     {{ auth.currentUser.initials }}
                   </span>
                 </div>
-                <span class="text-gray-700 dark:text-gray-200 text-sm max-w-[96px] truncate" :style="{ fontWeight: 600 }">
+                <span class="text-sm max-w-[96px] truncate" :style="{ fontWeight: 600, color: !isTransparent ? (isDark ? 'rgba(232,245,238,0.75)' : '#374151') : 'rgba(255,255,255,0.85)' }">
                   {{ auth.currentUser.name.split(' ')[0] }}
                 </span>
                 <ChevronDown
-                  :class="['w-3.5 h-3.5 text-gray-400 transition-transform', dropdownOpen ? 'rotate-180' : '']"
+                  :class="['w-3.5 h-3.5 transition-transform duration-300', dropdownOpen ? 'rotate-180' : '']"
+                  :style="{ color: !isTransparent ? (isDark ? 'rgba(232,245,238,0.5)' : '#9ca3af') : 'rgba(255,255,255,0.5)' }"
                 />
               </button>
 
@@ -200,22 +249,19 @@ const handleLogout = async () => {
                     Get Profile
                   </router-link>
 
-                  <button
-                    @click="auth.toggleTheme()"
-                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-400 transition-colors"
-                    :style="{ fontWeight: 500 }"
-                  >
-                    <template v-if="auth.theme === 'light'">
-                      <Moon class="w-4 h-4" />
-                      <span>Theme</span>
-                      <span class="ml-auto text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-full">Light</span>
-                    </template>
-                    <template v-else>
-                      <Sun class="w-4 h-4" />
-                      <span>Theme</span>
-                      <span class="ml-auto text-xs px-2 py-0.5 bg-gray-700 text-yellow-300 rounded-full">Dark</span>
-                    </template>
-                  </button>
+                  <div class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300">
+                    <span :style="{ fontWeight: 500 }">Theme</span>
+                    <button
+                      @click="auth.toggleTheme()"
+                      aria-label="Toggle theme"
+                      class="relative flex items-center rounded-full transition-all duration-500 focus:outline-none flex-shrink-0 ml-auto"
+                      :style="toggleTrackStyle"
+                    >
+                      <span class="absolute left-2 text-xs select-none" :style="{ opacity: isDark ? 0 : 1, transition: 'opacity 0.3s' }">🌞</span>
+                      <span class="absolute right-2 select-none" :style="{ opacity: isDark ? 1 : 0, transition: 'opacity 0.3s', fontSize: '10px' }">🌙</span>
+                      <span class="absolute rounded-full" :style="toggleThumbStyle" />
+                    </button>
+                  </div>
 
                   <router-link
                     to="/my-orders"
@@ -265,7 +311,8 @@ const handleLogout = async () => {
 
           <!-- Mobile menu toggle -->
           <button
-            class="lg:hidden p-2.5 text-gray-600 dark:text-gray-300 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-xl transition-all"
+            class="lg:hidden p-2.5 rounded-xl transition-all duration-300 hover:opacity-80"
+            :style="{ color: !isTransparent ? (isDark ? 'rgba(232,245,238,0.75)' : '#374151') : 'rgba(255,255,255,0.85)' }"
             @click="mobileOpen = !mobileOpen"
           >
             <X v-if="mobileOpen" class="w-5 h-5" />
@@ -306,11 +353,19 @@ const handleLogout = async () => {
         <router-link to="/profile" @click="mobileOpen = false" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl transition-colors" :style="{ fontWeight: 500 }">
           <Settings class="w-4 h-4" /> Get Profile
         </router-link>
-        <button @click="auth.toggleTheme(); mobileOpen = false" class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl transition-colors" :style="{ fontWeight: 500 }">
-          <Moon v-if="auth.theme === 'light'" class="w-4 h-4" />
-          <Sun v-else class="w-4 h-4" />
-          Theme ({{ auth.theme }})
-        </button>
+        <div class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 rounded-xl">
+          <span :style="{ fontWeight: 500 }">Theme</span>
+          <button
+            @click="auth.toggleTheme()"
+            aria-label="Toggle theme"
+            class="relative flex items-center rounded-full transition-all duration-500 focus:outline-none flex-shrink-0 ml-auto"
+            :style="toggleTrackStyle"
+          >
+            <span class="absolute left-2 text-xs select-none" :style="{ opacity: isDark ? 0 : 1, transition: 'opacity 0.3s' }">🌞</span>
+            <span class="absolute right-2 select-none" :style="{ opacity: isDark ? 1 : 0, transition: 'opacity 0.3s', fontSize: '10px' }">🌙</span>
+            <span class="absolute rounded-full" :style="toggleThumbStyle" />
+          </button>
+        </div>
         <router-link to="/my-orders" @click="mobileOpen = false" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl transition-colors" :style="{ fontWeight: 500 }">
           <Package class="w-4 h-4" /> Orders
         </router-link>

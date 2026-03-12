@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   UtensilsCrossed, Users, ShoppingBag, TrendingUp, Plus, Pencil, Trash2,
-  X, Check, ChevronDown, LayoutDashboard, LogOut, Search, Star,
+  X, Check, ChevronDown, LayoutDashboard, LogOut, Search, Star, Loader2,
 } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
-import { dishes as initialDishes, type Dish } from '../data/menuData'
 import type { OrderStatus } from '../data/mockOrders'
 import { authService, type UserProfile } from '../services/authService'
+import { foodService, type FoodItem, type FoodCategory } from '../services/foodService'
 
 type Tab = 'dashboard' | 'food' | 'users' | 'orders'
 
@@ -22,25 +22,37 @@ const statusColor: Record<OrderStatus, string> = {
   Cancelled: 'bg-red-100 text-red-600',
 }
 
-const CATEGORIES = ['pasta', 'salad', 'burger', 'pizza', 'sushi', 'dessert']
-
-const emptyDish: Omit<Dish, 'id'> = {
-  name: '', description: '', price: 0, image: '', category: 'pasta', rating: 4.5, reviews: 0, tag: undefined,
-}
-
 const auth = useAuthStore()
 const router = useRouter()
 
 const activeTab = ref<Tab>('dashboard')
-const dishes = ref<Dish[]>([...initialDishes])
 const dishSearch = ref('')
 const orderSearch = ref('')
-const editDish = ref<Dish | null>(null)
 const showDishForm = ref(false)
-const tagOptions = ['Best Seller', "Chef's Pick", 'Popular', 'Healthy', 'Vegan', 'Fresh', 'Classic', 'Premium']
-const dishForm = ref<Omit<Dish, 'id'>>({ ...emptyDish })
-const deleteConfirmId = ref<number | null>(null)
 const sidebarOpen = ref(false)
+
+// Food management
+const foods = ref<FoodItem[]>([])
+const categories = ref<FoodCategory[]>([])
+const foodsLoading = ref(false)
+const foodActionLoading = ref(false)
+const foodMessage = ref<{ text: string; type: 'success' | 'error' } | null>(null)
+let foodMessageTimer: ReturnType<typeof setTimeout> | null = null
+const setFoodMessage = (msg: { text: string; type: 'success' | 'error' }) => {
+  foodMessage.value = msg
+  if (foodMessageTimer) clearTimeout(foodMessageTimer)
+  foodMessageTimer = setTimeout(() => { foodMessage.value = null }, 4000)
+}
+const editingFood = ref<FoodItem | null>(null)
+const showDeleteFoodModal = ref(false)
+const deleteFoodId = ref<string | null>(null)
+const deleteFoodName = ref('')
+const tagOptions = ['Best Seller', "Chef's Pick", 'Popular', 'Healthy', 'Vegan', 'Fresh', 'Classic', 'Premium']
+
+const emptyDishForm = {
+  name: '', description: '', price: 0, image: '', categoryId: '', rating: 4.5, reviews: 0, tag: '' as string | undefined,
+}
+const dishForm = ref({ ...emptyDishForm })
 
 // Users management
 const users = ref<UserProfile[]>([])
@@ -78,6 +90,23 @@ const filteredUsers = computed(() => users.value.filter(u =>
   u.email.toLowerCase().includes(userSearch.value.toLowerCase())
 ))
 
+// Fetch foods and categories
+const fetchFoods = async () => {
+  foodsLoading.value = true
+  try {
+    const [foodsData, categoriesData] = await Promise.all([
+      foodService.getAllFoods(),
+      foodService.getAllCategories(),
+    ])
+    foods.value = foodsData
+    categories.value = categoriesData
+  } catch {
+    setFoodMessage({ text: 'Failed to load foods', type: 'error' })
+  } finally {
+    foodsLoading.value = false
+  }
+}
+
 const fetchUsers = async () => {
   usersLoading.value = true
   try {
@@ -88,6 +117,10 @@ const fetchUsers = async () => {
     usersLoading.value = false
   }
 }
+
+onMounted(() => {
+  fetchFoods()
+})
 
 watch(activeTab, (tab) => {
   if (tab === 'users' && users.value.length === 0) fetchUsers()
@@ -154,30 +187,110 @@ const pendingOrders = computed(() => auth.orders.filter(o => o.status === 'Pendi
 
 const handleLogout = async () => { await auth.logout(); router.push('/') }
 
-const openAddDish = () => { editDish.value = null; dishForm.value = { ...emptyDish }; showDishForm.value = true }
-const openEditDish = (dish: Dish) => {
-  editDish.value = dish
-  dishForm.value = { name: dish.name, description: dish.description, price: dish.price, image: dish.image, category: dish.category, rating: dish.rating, reviews: dish.reviews, tag: dish.tag }
+// Food CRUD
+const getCategoryName = (food: FoodItem): string => {
+  if (typeof food.categoryId === 'object' && food.categoryId !== null) {
+    return (food.categoryId as FoodCategory).name
+  }
+  return ''
+}
+
+const getCategoryId = (food: FoodItem): string => {
+  if (typeof food.categoryId === 'object' && food.categoryId !== null) {
+    return (food.categoryId as FoodCategory)._id
+  }
+  return food.categoryId as string
+}
+
+const openAddDish = () => {
+  editingFood.value = null
+  dishForm.value = { ...emptyDishForm, categoryId: categories.value[0]?._id || '' }
   showDishForm.value = true
 }
 
-const saveDish = () => {
-  if (!dishForm.value.name || !dishForm.value.price) return
-  if (editDish.value) {
-    dishes.value = dishes.value.map(d => d.id === editDish.value!.id ? { ...dishForm.value, id: editDish.value!.id } : d)
-  } else {
-    const newId = Math.max(...dishes.value.map(d => d.id)) + 1
-    dishes.value = [...dishes.value, { ...dishForm.value, id: newId }]
+const openEditDish = (food: FoodItem) => {
+  editingFood.value = food
+  dishForm.value = {
+    name: food.name,
+    description: food.description,
+    price: food.price,
+    image: food.image,
+    categoryId: getCategoryId(food),
+    rating: food.rating,
+    reviews: food.reviews,
+    tag: food.tag || undefined,
   }
-  showDishForm.value = false
+  showDishForm.value = true
 }
 
-const deleteDish = (id: number) => { dishes.value = dishes.value.filter(d => d.id !== id); deleteConfirmId.value = null }
+const openDeleteFoodModal = (food: FoodItem) => {
+  deleteFoodId.value = food._id
+  deleteFoodName.value = food.name
+  showDeleteFoodModal.value = true
+}
 
-const filteredDishes = computed(() => dishes.value.filter(d =>
-  d.name.toLowerCase().includes(dishSearch.value.toLowerCase()) ||
-  d.category.toLowerCase().includes(dishSearch.value.toLowerCase())
+const confirmDeleteFood = async () => {
+  if (!deleteFoodId.value) return
+  foodActionLoading.value = true
+  try {
+    await foodService.deleteFood(deleteFoodId.value)
+    foods.value = foods.value.filter(f => f._id !== deleteFoodId.value)
+    showDeleteFoodModal.value = false
+    setFoodMessage({ text: 'Food deleted successfully', type: 'success' })
+  } catch (err: any) {
+    setFoodMessage({ text: err.response?.data?.message || 'Failed to delete food', type: 'error' })
+  } finally {
+    foodActionLoading.value = false
+  }
+}
+
+const saveDish = async () => {
+  const missing: string[] = []
+  if (!dishForm.value.name.trim()) missing.push('Dish Name')
+  if (!dishForm.value.description.trim()) missing.push('Description')
+  if (!dishForm.value.price || dishForm.value.price <= 0) missing.push('Price')
+  if (!dishForm.value.categoryId) missing.push('Category')
+  if (!dishForm.value.image.trim()) missing.push('Image URL')
+  if (missing.length) {
+    setFoodMessage({ text: `Missing required fields: ${missing.join(', ')}`, type: 'error' })
+    return
+  }
+  foodActionLoading.value = true
+  try {
+    const payload = {
+      name: dishForm.value.name,
+      description: dishForm.value.description,
+      price: dishForm.value.price,
+      image: dishForm.value.image,
+      categoryId: dishForm.value.categoryId,
+      rating: dishForm.value.rating,
+      reviews: dishForm.value.reviews,
+      tag: dishForm.value.tag || undefined,
+    }
+    if (editingFood.value) {
+      const updated = await foodService.updateFood(editingFood.value._id, payload)
+      const idx = foods.value.findIndex(f => f._id === editingFood.value!._id)
+      if (idx !== -1) foods.value[idx] = updated
+      setFoodMessage({ text: 'Food updated successfully', type: 'success' })
+    } else {
+      const created = await foodService.createFood(payload)
+      foods.value.push(created)
+      setFoodMessage({ text: 'Food created successfully', type: 'success' })
+    }
+    showDishForm.value = false
+  } catch (err: any) {
+    setFoodMessage({ text: err.response?.data?.message || 'Failed to save food', type: 'error' })
+  } finally {
+    foodActionLoading.value = false
+  }
+}
+
+
+const filteredDishes = computed(() => foods.value.filter(f =>
+  f.name.toLowerCase().includes(dishSearch.value.toLowerCase()) ||
+  getCategoryName(f).toLowerCase().includes(dishSearch.value.toLowerCase())
 ))
+
 const filteredOrders = computed(() => auth.orders.filter(o =>
   o.id.toLowerCase().includes(orderSearch.value.toLowerCase()) ||
   o.status.toLowerCase().includes(orderSearch.value.toLowerCase())
@@ -256,7 +369,7 @@ const navIcons = { dashboard: LayoutDashboard, food: UtensilsCrossed, users: Use
         <div v-if="activeTab === 'dashboard'" class="space-y-6">
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div v-for="s in [
-              { label: 'Total Dishes', value: dishes.length, icon: UtensilsCrossed, color: 'bg-green-100 text-green-600', change: 'items on menu' },
+              { label: 'Total Dishes', value: foods.length, icon: UtensilsCrossed, color: 'bg-green-100 text-green-600', change: 'items on menu' },
               { label: 'Total Users', value: users.length, icon: Users, color: 'bg-blue-100 text-blue-600', change: 'registered users' },
               { label: 'Total Orders', value: auth.orders.length, icon: ShoppingBag, color: 'bg-purple-100 text-purple-600', change: `${pendingOrders} pending` },
               { label: 'Revenue', value: `$${totalRevenue.toFixed(0)}`, icon: TrendingUp, color: 'bg-amber-100 text-amber-600', change: 'from delivered orders' },
@@ -313,16 +426,34 @@ const navIcons = { dashboard: LayoutDashboard, food: UtensilsCrossed, users: Use
 
         <!-- FOOD ITEMS -->
         <div v-if="activeTab === 'food'">
+          <!-- Message toast -->
+          <div v-if="foodMessage" :class="['mb-4 px-4 py-3 rounded-xl text-sm', foodMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700']" :style="{ fontWeight: 600 }">
+            {{ foodMessage.text }}
+            <button @click="foodMessage = null" class="float-right opacity-60 hover:opacity-100">&times;</button>
+          </div>
+
           <div class="flex items-center justify-between mb-5 gap-3 flex-wrap">
             <div class="relative">
               <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input v-model="dishSearch" type="text" placeholder="Search dishes..." class="pl-9 pr-4 py-2.5 border border-gray-200 bg-white rounded-xl text-sm outline-none focus:border-green-400 w-64" />
             </div>
-            <button @click="openAddDish" class="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 active:scale-95 transition-all text-sm" :style="{ fontWeight: 700 }">
-              <Plus class="w-4 h-4" /> Add Dish
-            </button>
+            <div class="flex gap-2">
+              <button @click="fetchFoods" class="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 active:scale-95 transition-all text-sm" :style="{ fontWeight: 600 }">
+                Refresh
+              </button>
+              <button @click="openAddDish" class="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 active:scale-95 transition-all text-sm" :style="{ fontWeight: 700 }">
+                <Plus class="w-4 h-4" /> Add Dish
+              </button>
+            </div>
           </div>
-          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+
+          <!-- Loading -->
+          <div v-if="foodsLoading" class="bg-white rounded-2xl shadow-sm border border-gray-100 py-16 text-center">
+            <Loader2 class="w-6 h-6 text-green-600 animate-spin mx-auto mb-2" />
+            <p class="text-gray-400 text-sm">Loading foods...</p>
+          </div>
+
+          <div v-else class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="overflow-x-auto">
               <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-100">
@@ -331,38 +462,34 @@ const navIcons = { dashboard: LayoutDashboard, food: UtensilsCrossed, users: Use
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
-                  <tr v-for="dish in filteredDishes" :key="dish.id" class="hover:bg-gray-50 transition-colors">
+                  <tr v-for="food in filteredDishes" :key="food._id" class="hover:bg-gray-50 transition-colors">
                     <td class="px-5 py-3">
                       <div class="flex items-center gap-3">
-                        <img :src="dish.image" :alt="dish.name" class="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                        <img :src="food.image" :alt="food.name" class="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
                         <div class="min-w-0">
-                          <p class="text-gray-900 text-xs truncate max-w-[140px]" :style="{ fontWeight: 600 }">{{ dish.name }}</p>
-                          <p class="text-gray-400 text-[11px] truncate max-w-[140px]">{{ dish.description.substring(0, 40) }}…</p>
+                          <p class="text-gray-900 text-xs truncate max-w-[140px]" :style="{ fontWeight: 600 }">{{ food.name }}</p>
+                          <p class="text-gray-400 text-[11px] truncate max-w-[140px]">{{ food.description.substring(0, 40) }}…</p>
                         </div>
                       </div>
                     </td>
-                    <td class="px-5 py-3"><span class="capitalize text-xs px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full" :style="{ fontWeight: 600 }">{{ dish.category }}</span></td>
-                    <td class="px-5 py-3 text-green-600 text-sm" :style="{ fontWeight: 700 }">${{ dish.price.toFixed(2) }}</td>
+                    <td class="px-5 py-3"><span class="capitalize text-xs px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full" :style="{ fontWeight: 600 }">{{ getCategoryName(food) }}</span></td>
+                    <td class="px-5 py-3 text-green-600 text-sm" :style="{ fontWeight: 700 }">{{ new Intl.NumberFormat('vi-VN').format(food.price)}}₫</td>
                     <td class="px-5 py-3">
                       <div class="flex items-center gap-1">
                         <Star class="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                        <span class="text-xs text-gray-700" :style="{ fontWeight: 600 }">{{ dish.rating }}</span>
+                        <span class="text-xs text-gray-700" :style="{ fontWeight: 600 }">{{ food.rating }}</span>
                       </div>
                     </td>
                     <td class="px-5 py-3">
-                      <span v-if="dish.tag" class="text-xs px-2 py-0.5 bg-green-50 text-green-700 rounded-full" :style="{ fontWeight: 500 }">{{ dish.tag }}</span>
+                      <span v-if="food.tag" class="text-xs px-2 py-0.5 bg-green-50 text-green-700 rounded-full" :style="{ fontWeight: 500 }">{{ food.tag }}</span>
                       <span v-else class="text-gray-400 text-xs">—</span>
                     </td>
                     <td class="px-5 py-3">
                       <div class="flex items-center gap-2">
-                        <button @click="openEditDish(dish)" class="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                        <button @click="openEditDish(food)" class="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
                           <Pencil class="w-3.5 h-3.5" />
                         </button>
-                        <template v-if="deleteConfirmId === dish.id">
-                          <button @click="deleteDish(dish.id)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Confirm"><Check class="w-3.5 h-3.5" /></button>
-                          <button @click="deleteConfirmId = null" class="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors" title="Cancel"><X class="w-3.5 h-3.5" /></button>
-                        </template>
-                        <button v-else @click="deleteConfirmId = dish.id" class="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                        <button @click="openDeleteFoodModal(food)" class="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
                           <Trash2 class="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -528,7 +655,7 @@ const navIcons = { dashboard: LayoutDashboard, food: UtensilsCrossed, users: Use
     <div v-if="showDishForm" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center px-4">
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 class="text-gray-900 text-base" :style="{ fontWeight: 700 }">{{ editDish ? 'Edit Dish' : 'Add New Dish' }}</h2>
+          <h2 class="text-gray-900 text-base" :style="{ fontWeight: 700 }">{{ editingFood ? 'Edit Dish' : 'Add New Dish' }}</h2>
           <button @click="showDishForm = false" class="p-2 hover:bg-gray-100 rounded-xl transition-colors"><X class="w-4 h-4 text-gray-500" /></button>
         </div>
         <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
@@ -538,25 +665,25 @@ const navIcons = { dashboard: LayoutDashboard, food: UtensilsCrossed, users: Use
               <input v-model="dishForm.name" type="text" placeholder="e.g. Margherita Pizza" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-green-400" />
             </div>
             <div class="col-span-2">
-              <label class="block text-xs text-gray-600 mb-1.5" :style="{ fontWeight: 600 }">Description</label>
+              <label class="block text-xs text-gray-600 mb-1.5" :style="{ fontWeight: 600 }">Description *</label>
               <textarea v-model="dishForm.description" placeholder="Short description..." rows="2" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-green-400 resize-none"></textarea>
             </div>
             <div>
-              <label class="block text-xs text-gray-600 mb-1.5" :style="{ fontWeight: 600 }">Price ($) *</label>
+              <label class="block text-xs text-gray-600 mb-1.5" :style="{ fontWeight: 600 }">Price (₫) *</label>
               <input v-model.number="dishForm.price" type="number" step="0.01" min="0" placeholder="12.99" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-green-400" />
             </div>
             <div>
-              <label class="block text-xs text-gray-600 mb-1.5" :style="{ fontWeight: 600 }">Category</label>
-              <select v-model="dishForm.category" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-green-400 capitalize">
-                <option v-for="c in CATEGORIES" :key="c" :value="c" class="capitalize">{{ c.charAt(0).toUpperCase() + c.slice(1) }}</option>
+              <label class="block text-xs text-gray-600 mb-1.5" :style="{ fontWeight: 600 }">Category *</label>
+              <select v-model="dishForm.categoryId" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-green-400 capitalize">
+                <option v-for="c in categories" :key="c._id" :value="c._id">{{ c.name }}</option>
               </select>
             </div>
             <div class="col-span-2">
-              <label class="block text-xs text-gray-600 mb-1.5" :style="{ fontWeight: 600 }">Image URL</label>
+              <label class="block text-xs text-gray-600 mb-1.5" :style="{ fontWeight: 600 }">Image URL *</label>
               <input v-model="dishForm.image" type="url" placeholder="https://..." class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-green-400" />
             </div>
             <div>
-              <label class="block text-xs text-gray-600 mb-1.5" :style="{ fontWeight: 600 }">Rating (0–5)</label>
+              <label class="block text-xs text-gray-600 mb-1.5" :style="{ fontWeight: 600 }">Rating (0-5)</label>
               <input v-model.number="dishForm.rating" type="number" step="0.1" min="0" max="5" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-green-400" />
             </div>
             <div>
@@ -570,9 +697,10 @@ const navIcons = { dashboard: LayoutDashboard, food: UtensilsCrossed, users: Use
         </div>
         <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-3">
           <button @click="showDishForm = false" class="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm hover:bg-gray-50 transition-colors" :style="{ fontWeight: 600 }">Cancel</button>
-          <button @click="saveDish" class="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl text-sm hover:bg-green-700 active:scale-95 transition-all" :style="{ fontWeight: 700 }">
-            <Check class="w-4 h-4" />
-            {{ editDish ? 'Save Changes' : 'Add Dish' }}
+          <button @click="saveDish" :disabled="foodActionLoading" class="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl text-sm hover:bg-green-700 active:scale-95 transition-all" :style="{ fontWeight: 700 }">
+            <Loader2 v-if="foodActionLoading" class="w-4 h-4 animate-spin" />
+            <Check v-else class="w-4 h-4" />
+            {{ editingFood ? 'Save Changes' : 'Add Dish' }}
           </button>
         </div>
       </div>
@@ -596,6 +724,26 @@ const navIcons = { dashboard: LayoutDashboard, food: UtensilsCrossed, users: Use
           <button @click="savePassword" :disabled="userActionLoading || newPassword.length < 8" :class="['flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm transition-all', newPassword.length >= 8 ? 'bg-green-600 text-white hover:bg-green-700 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed']" :style="{ fontWeight: 700 }">
             <Check class="w-4 h-4" />
             Update Password
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- DELETE FOOD CONFIRM MODAL -->
+    <div v-if="showDeleteFoodModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center px-4">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h2 class="text-gray-900 text-base" :style="{ fontWeight: 700 }">Delete Food</h2>
+          <button @click="showDeleteFoodModal = false" class="p-2 hover:bg-gray-100 rounded-xl transition-colors"><X class="w-4 h-4 text-gray-500" /></button>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-gray-600">Are you sure you want to delete <span :style="{ fontWeight: 700 }">{{ deleteFoodName }}</span>? This action cannot be undone.</p>
+        </div>
+        <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-3">
+          <button @click="showDeleteFoodModal = false" class="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm hover:bg-gray-50 transition-colors" :style="{ fontWeight: 600 }">Cancel</button>
+          <button @click="confirmDeleteFood" :disabled="foodActionLoading" class="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl text-sm hover:bg-red-700 active:scale-95 transition-all" :style="{ fontWeight: 700 }">
+            <Loader2 v-if="foodActionLoading" class="w-4 h-4 animate-spin" />
+            <Trash2 v-else class="w-4 h-4" />
+            Delete Food
           </button>
         </div>
       </div>

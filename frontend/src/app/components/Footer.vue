@@ -13,7 +13,7 @@ const categories = ['Pasta', 'Salad', 'Burger', 'Pizza', 'Sushi', 'Dessert']
 </script>
 
 <template>
-  <footer class="bg-gray-900 dark:bg-gray-950 text-gray-300">
+  <footer class="bg-[#0d2818] dark:bg-[#050e08] text-gray-300">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
         <!-- Brand -->
@@ -25,13 +25,13 @@ const categories = ['Pasta', 'Salad', 'Burger', 'Pizza', 'Sushi', 'Dessert']
             Delivering happiness to your doorstep. Fresh, delicious meals from our kitchen to yours — fast and always on time.
           </p>
           <div class="flex items-center gap-3">
-            <a href="#" class="w-9 h-9 bg-gray-800 hover:bg-green-600 rounded-xl flex items-center justify-center transition-colors">
+            <a href="#" class="w-9 h-9 bg-[#1a3d2b] dark:bg-[#0a1a0f] hover:bg-green-600 rounded-xl flex items-center justify-center transition-colors">
               <Instagram class="w-4 h-4 text-gray-400 hover:text-white" />
             </a>
-            <a href="#" class="w-9 h-9 bg-gray-800 hover:bg-green-600 rounded-xl flex items-center justify-center transition-colors">
+            <a href="#" class="w-9 h-9 bg-[#1a3d2b] dark:bg-[#0a1a0f] hover:bg-green-600 rounded-xl flex items-center justify-center transition-colors">
               <Twitter class="w-4 h-4 text-gray-400 hover:text-white" />
             </a>
-            <a href="#" class="w-9 h-9 bg-gray-800 hover:bg-green-600 rounded-xl flex items-center justify-center transition-colors">
+            <a href="#" class="w-9 h-9 bg-[#1a3d2b] dark:bg-[#0a1a0f] hover:bg-green-600 rounded-xl flex items-center justify-center transition-colors">
               <Facebook class="w-4 h-4 text-gray-400 hover:text-white" />
             </a>
           </div>
@@ -39,12 +39,12 @@ const categories = ['Pasta', 'Salad', 'Burger', 'Pizza', 'Sushi', 'Dessert']
 
         <!-- Quick Links -->
         <div>
-          <h4 class="text-white text-sm mb-5" :style="{ fontWeight: 700 }">Quick Links</h4>
+          <h4 class="text-white dark:text-[#e8f5ee] text-sm mb-5" :style="{ fontWeight: 700 }">Quick Links</h4>
           <ul class="space-y-3">
             <li v-for="link in quickLinks" :key="link.path">
               <router-link
                 :to="link.path"
-                class="text-sm text-gray-400 hover:text-green-400 transition-colors"
+                class="text-sm text-[rgba(255,255,255,0.6)] dark:text-[rgba(255,255,255,0.45)] hover:text-green-400 transition-colors"
               >
                 {{ link.label }}
               </router-link>
@@ -54,12 +54,12 @@ const categories = ['Pasta', 'Salad', 'Burger', 'Pizza', 'Sushi', 'Dessert']
 
         <!-- Categories -->
         <div>
-          <h4 class="text-white text-sm mb-5" :style="{ fontWeight: 700 }">Categories</h4>
+          <h4 class="text-white dark:text-[#e8f5ee] text-sm mb-5" :style="{ fontWeight: 700 }">Categories</h4>
           <ul class="space-y-3">
             <li v-for="cat in categories" :key="cat">
               <router-link
                 :to="`/menu?category=${cat.toLowerCase()}`"
-                class="text-sm text-gray-400 hover:text-green-400 transition-colors"
+                class="text-sm text-[rgba(255,255,255,0.6)] dark:text-[rgba(255,255,255,0.45)] hover:text-green-400 transition-colors"
               >
                 {{ cat }}
               </router-link>
@@ -69,7 +69,7 @@ const categories = ['Pasta', 'Salad', 'Burger', 'Pizza', 'Sushi', 'Dessert']
 
         <!-- Contact -->
         <div>
-          <h4 class="text-white text-sm mb-5" :style="{ fontWeight: 700 }">Contact Us</h4>
+          <h4 class="text-white dark:text-[#e8f5ee] text-sm mb-5" :style="{ fontWeight: 700 }">Contact Us</h4>
           <ul class="space-y-4">
             <li class="flex items-start gap-3">
               <MapPin class="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
@@ -87,7 +87,7 @@ const categories = ['Pasta', 'Salad', 'Burger', 'Pizza', 'Sushi', 'Dessert']
         </div>
       </div>
 
-      <div class="mt-12 pt-6 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="mt-12 pt-6 border-t border-[rgba(255,255,255,0.1)] dark:border-[rgba(255,255,255,0.07)] flex flex-col sm:flex-row items-center justify-between gap-4">
         <p class="text-xs text-gray-500">
           &copy; 2026 Mealio. All rights reserved.
         </p>

@@ -14,7 +14,7 @@ const features = [
 </script>
 
 <template>
-  <main class="min-h-screen bg-white pt-20 lg:pt-24">
+  <main class="min-h-screen bg-white dark:bg-[#0a1a0f] pt-20 lg:pt-20">
     <!-- Hero -->
     <section
       class="py-20 px-4 relative overflow-hidden"
@@ -102,18 +102,18 @@ const features = [
                 <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-gray-900/50" />
               </div>
             </div>
-            <div class="absolute -right-6 top-1/3 bg-white rounded-2xl shadow-xl p-4 text-center">
-              <p class="text-green-600 text-2xl" :style="{ fontWeight: 800 }">1M+</p>
-              <p class="text-gray-500 text-xs" :style="{ fontWeight: 500 }">Downloads</p>
+            <div class="absolute -right-6 top-1/3 bg-white dark:bg-[#112318] rounded-2xl shadow-xl dark:shadow-[0_4px_32px_rgba(0,0,0,0.4)] p-4 text-center">
+              <p class="text-green-600 dark:text-[#52b788] text-2xl" :style="{ fontWeight: 800 }">1M+</p>
+              <p class="text-gray-500 dark:text-[#4d7a60] text-xs" :style="{ fontWeight: 500 }">Downloads</p>
             </div>
-            <div class="absolute -left-6 bottom-1/4 bg-white rounded-2xl shadow-xl p-3">
+            <div class="absolute -left-6 bottom-1/4 bg-white dark:bg-[#112318] rounded-2xl shadow-xl dark:shadow-[0_4px_32px_rgba(0,0,0,0.4)] p-3">
               <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <div class="w-8 h-8 bg-green-100 dark:bg-[#0d2818] rounded-full flex items-center justify-center">
                   <span class="text-lg">🍔</span>
                 </div>
                 <div>
-                  <p class="text-gray-900 text-xs" :style="{ fontWeight: 700 }">Order Delivered!</p>
-                  <p class="text-gray-400 text-[10px]">Just now</p>
+                  <p class="text-gray-900 dark:text-[#e8f5ee] text-xs" :style="{ fontWeight: 700 }">Order Delivered!</p>
+                  <p class="text-gray-400 dark:text-[#4d7a60] text-[10px]">Just now</p>
                 </div>
               </div>
             </div>
@@ -129,17 +129,17 @@ const features = [
           <p class="text-green-600 text-sm mb-2" :style="{ fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }">
             App Features
           </p>
-          <h2 class="text-gray-900 text-3xl sm:text-4xl" :style="{ fontWeight: 800 }">
+          <h2 class="text-gray-900 dark:text-[#e8f5ee] text-3xl sm:text-4xl" :style="{ fontWeight: 800 }">
             Everything You Need, In One App
           </h2>
         </div>
         <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div v-for="f in features" :key="f.title" class="p-6 rounded-2xl border-2 border-gray-100 hover:border-green-200 hover:bg-green-50/50 transition-all group text-center">
+          <div v-for="f in features" :key="f.title" class="p-6 rounded-2xl border-2 border-gray-100 dark:border-[rgba(82,183,136,0.15)] hover:border-green-200 dark:hover:border-[rgba(82,183,136,0.3)] hover:bg-green-50/50 dark:hover:bg-[#112318] transition-all group text-center">
             <div class="w-12 h-12 bg-green-100 group-hover:bg-green-600 rounded-2xl flex items-center justify-center mb-4 mx-auto transition-colors duration-300">
               <component :is="f.icon" class="w-5 h-5 text-green-600 group-hover:text-white transition-colors duration-300" />
             </div>
-            <h3 class="text-gray-900 mb-2" :style="{ fontWeight: 700 }">{{ f.title }}</h3>
-            <p class="text-gray-500 text-sm leading-relaxed">{{ f.desc }}</p>
+            <h3 class="text-gray-900 dark:text-[#e8f5ee] mb-2" :style="{ fontWeight: 700 }">{{ f.title }}</h3>
+            <p class="text-gray-500 dark:text-[#7aad90] text-sm leading-relaxed">{{ f.desc }}</p>
           </div>
         </div>
       </div>

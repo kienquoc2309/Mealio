@@ -3,7 +3,7 @@ import { MapPin, Phone, Mail, Clock, Send } from 'lucide-vue-next'
 </script>
 
 <template>
-  <main class="min-h-screen bg-gray-50 pt-20 lg:pt-24 pb-16">
+  <main class="min-h-screen bg-gray-50 dark:bg-[#0a1a0f] pt-20 lg:pt-20 pb-16">
     <!-- Hero -->
     <div
       class="py-14 px-4 relative overflow-hidden"
@@ -32,73 +32,73 @@ import { MapPin, Phone, Mail, Clock, Send } from 'lucide-vue-next'
         <!-- Contact Info -->
         <div class="space-y-6">
           <div>
-            <h2 class="text-gray-900 text-xl mb-4" :style="{ fontWeight: 700 }">Get In Touch</h2>
-            <p class="text-gray-500 text-sm leading-relaxed">
+            <h2 class="text-gray-900 dark:text-[#e8f5ee] text-xl mb-4" :style="{ fontWeight: 700 }">Get In Touch</h2>
+            <p class="text-gray-500 dark:text-[#7aad90] text-sm leading-relaxed">
               Have a question, feedback, or just want to say hello? We're here to help. Reach out to us through any of the channels below or fill out the contact form.
             </p>
           </div>
 
           <div class="space-y-4">
-            <div class="flex items-start gap-4 bg-white rounded-2xl p-5 border border-gray-100">
+            <div class="flex items-start gap-4 bg-white dark:bg-[#112318] rounded-2xl p-5 border border-gray-100 dark:border-[rgba(82,183,136,0.15)]">
               <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
                 <MapPin class="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p class="text-gray-900 text-sm" :style="{ fontWeight: 700 }">Address</p>
-                <p class="text-gray-500 text-sm">123 Flavor Street, Food City, FC 10001</p>
+                <p class="text-gray-900 dark:text-[#e8f5ee] text-sm" :style="{ fontWeight: 700 }">Address</p>
+                <p class="text-gray-500 dark:text-[#4d7a60] text-sm">123 Flavor Street, Food City, FC 10001</p>
               </div>
             </div>
-            <div class="flex items-start gap-4 bg-white rounded-2xl p-5 border border-gray-100">
+            <div class="flex items-start gap-4 bg-white dark:bg-[#112318] rounded-2xl p-5 border border-gray-100 dark:border-[rgba(82,183,136,0.15)]">
               <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Phone class="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p class="text-gray-900 text-sm" :style="{ fontWeight: 700 }">Phone</p>
-                <p class="text-gray-500 text-sm">+1 (555) 123-4567</p>
+                <p class="text-gray-900 dark:text-[#e8f5ee] text-sm" :style="{ fontWeight: 700 }">Phone</p>
+                <p class="text-gray-500 dark:text-[#4d7a60] text-sm">+1 (555) 123-4567</p>
               </div>
             </div>
-            <div class="flex items-start gap-4 bg-white rounded-2xl p-5 border border-gray-100">
+            <div class="flex items-start gap-4 bg-white dark:bg-[#112318] rounded-2xl p-5 border border-gray-100 dark:border-[rgba(82,183,136,0.15)]">
               <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Mail class="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p class="text-gray-900 text-sm" :style="{ fontWeight: 700 }">Email</p>
-                <p class="text-gray-500 text-sm">hello@mealio.com</p>
+                <p class="text-gray-900 dark:text-[#e8f5ee] text-sm" :style="{ fontWeight: 700 }">Email</p>
+                <p class="text-gray-500 dark:text-[#4d7a60] text-sm">hello@mealio.com</p>
               </div>
             </div>
-            <div class="flex items-start gap-4 bg-white rounded-2xl p-5 border border-gray-100">
+            <div class="flex items-start gap-4 bg-white dark:bg-[#112318] rounded-2xl p-5 border border-gray-100 dark:border-[rgba(82,183,136,0.15)]">
               <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Clock class="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p class="text-gray-900 text-sm" :style="{ fontWeight: 700 }">Hours</p>
-                <p class="text-gray-500 text-sm">Mon - Sun: 10:00 AM - 11:00 PM</p>
+                <p class="text-gray-900 dark:text-[#e8f5ee] text-sm" :style="{ fontWeight: 700 }">Hours</p>
+                <p class="text-gray-500 dark:text-[#4d7a60] text-sm">Mon - Sun: 10:00 AM - 11:00 PM</p>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Contact Form -->
-        <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-          <h2 class="text-gray-900 text-xl mb-6" :style="{ fontWeight: 700 }">Send a Message</h2>
+        <div class="bg-white dark:bg-[#112318] rounded-2xl p-8 shadow-sm dark:shadow-[0_4px_32px_rgba(0,0,0,0.4)] border border-gray-100 dark:border-[rgba(82,183,136,0.15)]">
+          <h2 class="text-gray-900 dark:text-[#e8f5ee] text-xl mb-6" :style="{ fontWeight: 700 }">Send a Message</h2>
           <form class="space-y-5" @submit.prevent>
             <div class="grid sm:grid-cols-2 gap-5">
               <div>
-                <label class="block text-xs text-gray-600 mb-1.5" :style="{ fontWeight: 600 }">Name</label>
-                <input type="text" placeholder="Your name" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-green-400 placeholder-gray-400" />
+                <label class="block text-xs text-gray-600 dark:text-[#7aad90] mb-1.5" :style="{ fontWeight: 600 }">Name</label>
+                <input type="text" placeholder="Your name" class="w-full px-4 py-3 border border-gray-200 dark:border-[rgba(82,183,136,0.15)] bg-white dark:bg-[#0d2818] text-gray-900 dark:text-[#e8f5ee] rounded-xl text-sm outline-none focus:border-green-400 placeholder-gray-400 dark:placeholder-[#4d7a60]" />
               </div>
               <div>
-                <label class="block text-xs text-gray-600 mb-1.5" :style="{ fontWeight: 600 }">Email</label>
-                <input type="email" placeholder="you@example.com" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-green-400 placeholder-gray-400" />
+                <label class="block text-xs text-gray-600 dark:text-[#7aad90] mb-1.5" :style="{ fontWeight: 600 }">Email</label>
+                <input type="email" placeholder="you@example.com" class="w-full px-4 py-3 border border-gray-200 dark:border-[rgba(82,183,136,0.15)] bg-white dark:bg-[#0d2818] text-gray-900 dark:text-[#e8f5ee] rounded-xl text-sm outline-none focus:border-green-400 placeholder-gray-400 dark:placeholder-[#4d7a60]" />
               </div>
             </div>
             <div>
-              <label class="block text-xs text-gray-600 mb-1.5" :style="{ fontWeight: 600 }">Subject</label>
-              <input type="text" placeholder="How can we help?" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-green-400 placeholder-gray-400" />
+              <label class="block text-xs text-gray-600 dark:text-[#7aad90] mb-1.5" :style="{ fontWeight: 600 }">Subject</label>
+              <input type="text" placeholder="How can we help?" class="w-full px-4 py-3 border border-gray-200 dark:border-[rgba(82,183,136,0.15)] bg-white dark:bg-[#0d2818] text-gray-900 dark:text-[#e8f5ee] rounded-xl text-sm outline-none focus:border-green-400 placeholder-gray-400 dark:placeholder-[#4d7a60]" />
             </div>
             <div>
-              <label class="block text-xs text-gray-600 mb-1.5" :style="{ fontWeight: 600 }">Message</label>
-              <textarea rows="5" placeholder="Write your message..." class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-green-400 placeholder-gray-400 resize-none"></textarea>
+              <label class="block text-xs text-gray-600 dark:text-[#7aad90] mb-1.5" :style="{ fontWeight: 600 }">Message</label>
+              <textarea rows="5" placeholder="Write your message..." class="w-full px-4 py-3 border border-gray-200 dark:border-[rgba(82,183,136,0.15)] bg-white dark:bg-[#0d2818] text-gray-900 dark:text-[#e8f5ee] rounded-xl text-sm outline-none focus:border-green-400 placeholder-gray-400 dark:placeholder-[#4d7a60] resize-none"></textarea>
             </div>
             <button
               type="submit"

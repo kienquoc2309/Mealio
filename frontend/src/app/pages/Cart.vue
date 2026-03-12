@@ -61,8 +61,8 @@ const total = computed(() => cart.totalPrice + deliveryFee.value + tax.value)
             <img :src="item.image" :alt="item.name" class="w-20 h-20 rounded-xl object-cover flex-shrink-0" />
             <div class="flex-1 min-w-0">
               <h3 class="text-gray-900 text-sm mb-1 truncate" :style="{ fontWeight: 700 }">{{ item.name }}</h3>
-              <p class="text-green-600 text-base" :style="{ fontWeight: 800 }">${{ (item.price * item.quantity).toFixed(2) }}</p>
-              <p class="text-gray-400 text-xs">${{ item.price.toFixed(2) }} each</p>
+              <p class="text-green-600 text-base" :style="{ fontWeight: 800 }">{{ new Intl.NumberFormat('vi-VN').format(item.price * item.quantity)}}₫</p>
+              <p class="text-gray-400 text-xs">{{ new Intl.NumberFormat('vi-VN').format(item.price)}}₫ each</p>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
               <button @click="cart.updateQuantity(item.id, item.quantity - 1)" class="w-8 h-8 bg-gray-100 hover:bg-green-100 hover:text-green-600 rounded-lg flex items-center justify-center transition-colors">
@@ -100,7 +100,7 @@ const total = computed(() => cart.totalPrice + deliveryFee.value + tax.value)
             <div class="space-y-3 mb-5">
               <div class="flex justify-between text-sm">
                 <span class="text-gray-500">Subtotal ({{ cart.totalItems }} items)</span>
-                <span class="text-gray-900" :style="{ fontWeight: 600 }">${{ cart.totalPrice.toFixed(2) }}</span>
+                <span class="text-gray-900" :style="{ fontWeight: 600 }">{{ new Intl.NumberFormat('vi-VN').format(cart.totalPrice)}}₫</span>
               </div>
               <div class="flex justify-between text-sm">
                 <span class="text-gray-500">Delivery Fee</span>
