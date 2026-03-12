@@ -9,7 +9,14 @@ const quickLinks = [
   { label: 'Login', path: '/login' },
 ]
 
-const categories = ['Pasta', 'Salad', 'Burger', 'Pizza', 'Sushi', 'Dessert']
+const categories = [
+  { label: 'Mì Ý', query: 'mì ý' },
+  { label: 'Salad', query: 'salad' },
+  { label: 'Burger', query: 'burger' },
+  { label: 'Pizza', query: 'pizza' },
+  { label: 'Sushi', query: 'sushi' },
+  { label: 'Tráng Miệng', query: 'tráng miệng' },
+]
 </script>
 
 <template>
@@ -56,12 +63,12 @@ const categories = ['Pasta', 'Salad', 'Burger', 'Pizza', 'Sushi', 'Dessert']
         <div>
           <h4 class="text-white dark:text-[#e8f5ee] text-sm mb-5" :style="{ fontWeight: 700 }">Categories</h4>
           <ul class="space-y-3">
-            <li v-for="cat in categories" :key="cat">
+            <li v-for="cat in categories" :key="cat.query">
               <router-link
-                :to="`/menu?category=${cat.toLowerCase()}`"
+                :to="`/menu?category=${encodeURIComponent(cat.query)}`"
                 class="text-sm text-[rgba(255,255,255,0.6)] dark:text-[rgba(255,255,255,0.45)] hover:text-green-400 transition-colors"
               >
-                {{ cat }}
+                {{ cat.label }}
               </router-link>
             </li>
           </ul>
@@ -73,11 +80,11 @@ const categories = ['Pasta', 'Salad', 'Burger', 'Pizza', 'Sushi', 'Dessert']
           <ul class="space-y-4">
             <li class="flex items-start gap-3">
               <MapPin class="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-              <span class="text-sm text-gray-400">123 Flavor Street, Food City, FC 10001</span>
+              <span class="text-sm text-gray-400">196 Hoang Dieu street, Khanh Hoi ward, HCMC</span>
             </li>
             <li class="flex items-center gap-3">
               <Phone class="w-4 h-4 text-green-500 flex-shrink-0" />
-              <span class="text-sm text-gray-400">+1 (555) 123-4567</span>
+              <span class="text-sm text-gray-400">+84 939 143 228</span>
             </li>
             <li class="flex items-center gap-3">
               <Mail class="w-4 h-4 text-green-500 flex-shrink-0" />

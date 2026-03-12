@@ -8,16 +8,48 @@ const auth = useAuthStore()
 const form = ref({
   name: auth.currentUser?.name ?? '',
   email: auth.currentUser?.email ?? '',
-  phone: auth.currentUser?.phone ?? '',
+  phone: auth.currentUser?.phone ? formatPhone(auth.currentUser.phone) : '',
   address: auth.currentUser?.address ?? '',
 })
 
 const saved = ref(false)
 const error = ref('')
 const saving = ref(false)
+const phoneError = ref('')
+
+function formatPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+  if (digits.startsWith('84') && digits.length > 2) {
+    return '+84 ' + digits.slice(2).replace(/(\d{3})(\d{3})(\d+)/, '$1 $2 $3').trim()
+  }
+  if (digits.startsWith('0') && digits.length > 1) {
+    return '+84 ' + digits.slice(1).replace(/(\d{3})(\d{3})(\d+)/, '$1 $2 $3').trim()
+  }
+  return '+84 ' + digits.replace(/(\d{3})(\d{3})(\d+)/, '$1 $2 $3').trim()
+}
+
+const validatePhone = () => {
+  const digits = form.value.phone.replace(/\D/g, '')
+  if (!digits) { phoneError.value = ''; return true }
+  const isValid = /^(0[3-9]\d{8}|84[3-9]\d{8}|[3-9]\d{8})$/.test(digits)
+  if (!isValid) {
+    phoneError.value = 'Please enter a valid Vietnamese phone number'
+    return false
+  }
+  phoneError.value = ''
+  form.value.phone = formatPhone(digits)
+  return true
+}
+
+const onPhoneInput = (e: Event) => {
+  const input = e.target as HTMLInputElement
+  input.value = input.value.replace(/[^\d\s+\-()]/g, '')
+  form.value.phone = input.value
+}
 
 const handleSubmit = async () => {
   error.value = ''
+  if (!validatePhone()) return
   saving.value = true
   const result = await auth.updateProfile({
     name: form.value.name,
@@ -38,9 +70,10 @@ const resetForm = () => {
   form.value = {
     name: auth.currentUser.name,
     email: auth.currentUser.email,
-    phone: auth.currentUser.phone,
+    phone: auth.currentUser.phone ? formatPhone(auth.currentUser.phone) : '',
     address: auth.currentUser.address,
   }
+  phoneError.value = ''
 }
 
 const joinDate = computed(() => {
@@ -133,8 +166,21 @@ const joinDate = computed(() => {
                 <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1.5" :style="{ fontWeight: 600 }">Phone Number</label>
                 <div class="relative">
                   <Phone class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input type="tel" v-model="form.phone" class="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-xl text-sm outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 dark:focus:ring-green-900/30 transition-all" />
+                  <input
+                    type="tel"
+                    v-model="form.phone"
+                    @input="onPhoneInput"
+                    @blur="validatePhone"
+                    placeholder="e.g. 0788 808 474"
+                    :class="[
+                      'w-full pl-10 pr-4 py-3 border rounded-xl text-sm outline-none transition-all dark:bg-gray-800 dark:text-white',
+                      phoneError
+                        ? 'border-red-400 dark:border-red-500 focus:border-red-400 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900/30'
+                        : 'border-gray-200 dark:border-gray-600 focus:border-green-400 focus:ring-2 focus:ring-green-100 dark:focus:ring-green-900/30'
+                    ]"
+                  />
                 </div>
+                <p v-if="phoneError" class="text-red-500 text-xs mt-1">{{ phoneError }}</p>
               </div>
               <div>
                 <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1.5" :style="{ fontWeight: 600 }">Delivery Address</label>

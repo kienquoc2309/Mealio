@@ -38,7 +38,10 @@ export class User {
   @Prop()
   address?: string;
 
-  @Prop({ type: [{ foodId: { type: Types.ObjectId, ref: 'Food' }, quantity: Number }], default: [] })
+  @Prop({
+    type: [{ foodId: { type: Types.ObjectId, ref: 'Food' }, quantity: Number }],
+    default: [],
+  })
   cart!: CartItem[];
 }
 

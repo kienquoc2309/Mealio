@@ -45,7 +45,7 @@ import { MapPin, Phone, Mail, Clock, Send } from 'lucide-vue-next'
               </div>
               <div>
                 <p class="text-gray-900 dark:text-[#e8f5ee] text-sm" :style="{ fontWeight: 700 }">Address</p>
-                <p class="text-gray-500 dark:text-[#4d7a60] text-sm">123 Flavor Street, Food City, FC 10001</p>
+                <p class="text-gray-500 dark:text-[#4d7a60] text-sm">196 Hoang Dieu Street, Khanh Hoi Ward, HCMC</p>
               </div>
             </div>
             <div class="flex items-start gap-4 bg-white dark:bg-[#112318] rounded-2xl p-5 border border-gray-100 dark:border-[rgba(82,183,136,0.15)]">
@@ -54,7 +54,7 @@ import { MapPin, Phone, Mail, Clock, Send } from 'lucide-vue-next'
               </div>
               <div>
                 <p class="text-gray-900 dark:text-[#e8f5ee] text-sm" :style="{ fontWeight: 700 }">Phone</p>
-                <p class="text-gray-500 dark:text-[#4d7a60] text-sm">+1 (555) 123-4567</p>
+                <p class="text-gray-500 dark:text-[#4d7a60] text-sm">+84 939 143 228</p>
               </div>
             </div>
             <div class="flex items-start gap-4 bg-white dark:bg-[#112318] rounded-2xl p-5 border border-gray-100 dark:border-[rgba(82,183,136,0.15)]">

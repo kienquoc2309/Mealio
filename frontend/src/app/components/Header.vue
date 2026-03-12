@@ -7,7 +7,7 @@ import {
 } from 'lucide-vue-next'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
-import { dishes } from '../data/menuData'
+import { foodService, type FoodItem } from '../services/foodService'
 
 const cart = useCartStore()
 const auth = useAuthStore()
@@ -17,7 +17,8 @@ const route = useRoute()
 const mobileOpen = ref(false)
 const searchOpen = ref(false)
 const searchQuery = ref('')
-const searchResults = ref<typeof dishes>([])
+const searchResults = ref<FoodItem[]>([])
+const allFoods = ref<FoodItem[]>([])
 const dropdownOpen = ref(false)
 let hoverTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -36,7 +37,14 @@ const isHeroPage = computed(() => route.path === '/')
 const isTransparent = computed(() => isHeroPage.value && !scrolled.value)
 
 const handleScrollEvent = () => { scrolled.value = window.scrollY > 40 }
-onMounted(() => { window.addEventListener('scroll', handleScrollEvent); handleScrollEvent() })
+const loadFoods = async () => {
+  try {
+    allFoods.value = await foodService.getAllFoods()
+  } catch {
+    allFoods.value = []
+  }
+}
+onMounted(() => { window.addEventListener('scroll', handleScrollEvent); handleScrollEvent(); loadFoods() })
 onUnmounted(() => { window.removeEventListener('scroll', handleScrollEvent) })
 
 const headerStyle = computed(() => {
@@ -80,23 +88,29 @@ const toggleThumbStyle = computed(() => ({
 
 const isActive = (path: string) => route.path === path
 
+const getCategoryName = (food: FoodItem): string => {
+  if (typeof food.categoryId === 'object' && food.categoryId) return food.categoryId.name
+  return ''
+}
+
 const handleSearch = (query: string) => {
   searchQuery.value = query
   if (query.trim().length === 0) { searchResults.value = []; return }
-  const results = dishes.filter(
-    (d) =>
-      d.name.toLowerCase().includes(query.toLowerCase()) ||
-      d.category.toLowerCase().includes(query.toLowerCase()) ||
-      d.description.toLowerCase().includes(query.toLowerCase())
+  const q = query.toLowerCase()
+  const results = allFoods.value.filter(
+    (f) =>
+      f.name.toLowerCase().includes(q) ||
+      getCategoryName(f).toLowerCase().includes(q) ||
+      f.description.toLowerCase().includes(q)
   )
   searchResults.value = results.slice(0, 5)
 }
 
-const handleSearchSelect = (category: string) => {
+const handleSearchSelect = (categoryName: string) => {
   searchOpen.value = false
   searchQuery.value = ''
   searchResults.value = []
-  router.push(`/menu?category=${category}`)
+  router.push(`/menu?category=${encodeURIComponent(categoryName.toLowerCase())}`)
 }
 
 const closeSearch = () => {
@@ -416,17 +430,17 @@ const handleLogout = async () => {
       </div>
 
       <ul v-if="searchResults.length > 0" class="py-2 max-h-80 overflow-y-auto">
-        <li v-for="dish in searchResults" :key="dish.id">
+        <li v-for="food in searchResults" :key="food._id">
           <button
-            @click="handleSearchSelect(dish.category)"
+            @click="handleSearchSelect(getCategoryName(food))"
             class="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors text-left"
           >
-            <img :src="dish.image" :alt="dish.name" class="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+            <img :src="food.image" :alt="food.name" class="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
             <div class="min-w-0">
-              <p class="text-sm text-gray-900 dark:text-white truncate" :style="{ fontWeight: 500 }">{{ dish.name }}</p>
-              <p class="text-xs text-green-600 capitalize">{{ dish.category }}</p>
+              <p class="text-sm text-gray-900 dark:text-white truncate" :style="{ fontWeight: 500 }">{{ food.name }}</p>
+              <p class="text-xs text-green-600 capitalize">{{ getCategoryName(food) }}</p>
             </div>
-            <span class="ml-auto text-sm text-gray-700 dark:text-gray-300" :style="{ fontWeight: 600 }">${{ dish.price }}</span>
+            <span class="ml-auto text-sm text-gray-700 dark:text-gray-300" :style="{ fontWeight: 600 }">{{ food.price.toLocaleString() }}đ</span>
           </button>
         </li>
       </ul>
@@ -437,7 +451,7 @@ const handleLogout = async () => {
         <p class="text-xs text-gray-400 mb-3" :style="{ fontWeight: 600 }">POPULAR SEARCHES</p>
         <div class="flex flex-wrap gap-2">
           <button
-            v-for="tag in ['Pasta', 'Burger', 'Pizza', 'Sushi', 'Salad', 'Dessert']"
+            v-for="tag in ['Mì Ý', 'Burger', 'Pizza', 'Sushi', 'Salad', 'Tráng miệng']"
             :key="tag"
             @click="handleSearchSelect(tag.toLowerCase())"
             class="px-3 py-1.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm rounded-full hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors"

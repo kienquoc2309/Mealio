@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import { authService, type UserProfile } from '../services/authService'
 import { mockOrders, type Order, type OrderStatus } from '../data/mockOrders'
+import { useCartStore } from './cart'
 
 export type UserRole = 'user' | 'admin'
 export type Theme = 'light' | 'dark'
@@ -75,6 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
         localStorage.setItem('refreshToken', res.refreshToken)
         const profile = await authService.getProfile()
         currentUser.value = profileToCurrentUser(profile)
+        useCartStore().fetchCart()
         return { success: true, message: res.message }
       }
       return { success: false, message: res.message || 'Login failed' }
@@ -95,6 +97,7 @@ export const useAuthStore = defineStore('auth', () => {
         localStorage.setItem('refreshToken', res.refreshToken)
         const profile = await authService.getProfile()
         currentUser.value = profileToCurrentUser(profile)
+        useCartStore().fetchCart()
         return { success: true, message: res.message }
       }
       return { success: false, message: res.message || 'Registration failed' }
@@ -117,6 +120,7 @@ export const useAuthStore = defineStore('auth', () => {
       currentUser.value = null
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
+      useCartStore().cartItems = []
     }
   }
 
@@ -127,6 +131,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const profile = await authService.getProfile()
       currentUser.value = profileToCurrentUser(profile)
+      useCartStore().fetchCart()
     } catch {
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')

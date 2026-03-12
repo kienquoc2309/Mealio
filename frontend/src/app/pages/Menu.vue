@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ShoppingCart, Star, Plus, Check, SlidersHorizontal, Loader2 } from 'lucide-vue-next'
+import { ShoppingCart, Star, Plus, Minus, Check, SlidersHorizontal, Loader2 } from 'lucide-vue-next'
 import { useCartStore } from '../stores/cart'
 import { foodService, type FoodItem, type FoodCategory } from '../services/foodService'
 import { categories as fallbackCategories, dishes as fallbackDishes, type Dish } from '../data/menuData'
@@ -39,13 +39,6 @@ const fetchData = async () => {
 onMounted(fetchData)
 
 const useFallback = computed(() => foods.value.length === 0 && !loading.value)
-
-const getCategoryName = (food: FoodItem): string => {
-  if (typeof food.categoryId === 'object' && food.categoryId !== null) {
-    return (food.categoryId as FoodCategory).name.toLowerCase()
-  }
-  return ''
-}
 
 const getCategoryIcon = (cat: FoodCategory): string => {
   return cat.icon || '🍽️'
@@ -100,20 +93,13 @@ const filteredFallbackDishes = computed(() => {
 const displayCount = computed(() => useFallback.value ? filteredFallbackDishes.value.length : filteredApiFoods.value.length)
 
 const handleAddApi = (food: FoodItem) => {
-  const dish: Dish = {
-    id: food._id as unknown as number,
+  cart.addToCart({
+    _id: food._id,
     name: food.name,
     description: food.description,
     price: food.price,
     image: food.image,
-    category: getCategoryName(food),
-    rating: food.rating,
-    reviews: food.reviews,
-    tag: food.tag,
-  }
-  // Store _id for cart operations
-  ;(dish as any)._id = food._id
-  cart.addToCart(dish)
+  })
   addedIds.value = new Set(addedIds.value).add(food._id)
   setTimeout(() => {
     const next = new Set(addedIds.value)
@@ -123,7 +109,13 @@ const handleAddApi = (food: FoodItem) => {
 }
 
 const handleAddFallback = (dish: Dish) => {
-  cart.addToCart(dish)
+  cart.addToCart({
+    _id: String(dish.id),
+    name: dish.name,
+    description: dish.description,
+    price: dish.price,
+    image: dish.image,
+  })
   addedIds.value = new Set(addedIds.value).add(String(dish.id))
   setTimeout(() => {
     const next = new Set(addedIds.value)
@@ -132,8 +124,9 @@ const handleAddFallback = (dish: Dish) => {
   }, 1500)
 }
 
-const isInCartApi = (id: string) => cart.cartItems.some((item) => (item as any)._id === id || String(item.id) === id)
-const isInCartFallback = (id: number) => cart.cartItems.some((item) => item.id === id)
+const getCartQty = (id: string) => cart.cartItems.find((item) => item.foodId === id)?.quantity ?? 0
+const isInCartApi = (id: string) => getCartQty(id) > 0
+const isInCartFallback = (id: number) => getCartQty(String(id)) > 0
 
 const tagColors: Record<string, string> = {
   'Best Seller': 'bg-green-100 text-green-700',
@@ -300,27 +293,28 @@ const tagColors: Record<string, string> = {
                     <span class="text-gray-700 dark:text-[#7aad90] text-xs" :style="{ fontWeight: 600 }">{{ food.rating }}</span>
                     <span class="text-gray-400 dark:text-[#4d7a60] text-xs">({{food.reviews }})</span>
                   </div>
+                  <div v-if="isInCartApi(food._id)" class="flex items-center gap-1">
+                    <button
+                      @click="cart.updateQuantity(food._id, getCartQty(food._id) - 1)"
+                      class="w-7 h-7 flex items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors active:scale-95"
+                    >
+                      <Minus class="w-3.5 h-3.5" />
+                    </button>
+                    <span class="w-6 text-center text-xs text-gray-900 dark:text-[#e8f5ee]" :style="{ fontWeight: 700 }">{{ getCartQty(food._id) }}</span>
+                    <button
+                      @click="handleAddApi(food)"
+                      class="w-7 h-7 flex items-center justify-center rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors active:scale-95"
+                    >
+                      <Plus class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                   <button
+                    v-else
                     @click="handleAddApi(food)"
-                    :class="[
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all active:scale-95',
-                      addedIds.has(food._id)
-                        ? 'bg-green-100 text-green-600'
-                        : isInCartApi(food._id)
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                        : 'bg-green-600 text-white hover:bg-green-700 shadow-sm'
-                    ]"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs bg-green-600 text-white hover:bg-green-700 shadow-sm transition-all active:scale-95"
                     :style="{ fontWeight: 600 }"
                   >
-                    <template v-if="addedIds.has(food._id)">
-                      <Check class="w-3 h-3" /> Added!
-                    </template>
-                    <template v-else-if="isInCartApi(food._id)">
-                      <ShoppingCart class="w-3 h-3" /> Add More
-                    </template>
-                    <template v-else>
-                      <ShoppingCart class="w-3 h-3" /> Add to Cart
-                    </template>
+                    <ShoppingCart class="w-3 h-3" /> Add to Cart
                   </button>
                 </div>
               </div>
@@ -375,27 +369,28 @@ const tagColors: Record<string, string> = {
                     <span class="text-gray-700 dark:text-[#7aad90] text-xs" :style="{ fontWeight: 600 }">{{ dish.rating }}</span>
                     <span class="text-gray-400 dark:text-[#4d7a60] text-xs">({{dish.reviews }})</span>
                   </div>
+                  <div v-if="isInCartFallback(dish.id)" class="flex items-center gap-1">
+                    <button
+                      @click="cart.updateQuantity(String(dish.id), getCartQty(String(dish.id)) - 1)"
+                      class="w-7 h-7 flex items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors active:scale-95"
+                    >
+                      <Minus class="w-3.5 h-3.5" />
+                    </button>
+                    <span class="w-6 text-center text-xs text-gray-900 dark:text-[#e8f5ee]" :style="{ fontWeight: 700 }">{{ getCartQty(String(dish.id)) }}</span>
+                    <button
+                      @click="handleAddFallback(dish)"
+                      class="w-7 h-7 flex items-center justify-center rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors active:scale-95"
+                    >
+                      <Plus class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                   <button
+                    v-else
                     @click="handleAddFallback(dish)"
-                    :class="[
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all active:scale-95',
-                      addedIds.has(String(dish.id))
-                        ? 'bg-green-100 text-green-600'
-                        : isInCartFallback(dish.id)
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                        : 'bg-green-600 text-white hover:bg-green-700 shadow-sm'
-                    ]"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs bg-green-600 text-white hover:bg-green-700 shadow-sm transition-all active:scale-95"
                     :style="{ fontWeight: 600 }"
                   >
-                    <template v-if="addedIds.has(String(dish.id))">
-                      <Check class="w-3 h-3" /> Added!
-                    </template>
-                    <template v-else-if="isInCartFallback(dish.id)">
-                      <ShoppingCart class="w-3 h-3" /> Add More
-                    </template>
-                    <template v-else>
-                      <ShoppingCart class="w-3 h-3" /> Add to Cart
-                    </template>
+                    <ShoppingCart class="w-3 h-3" /> Add to Cart
                   </button>
                 </div>
               </div>

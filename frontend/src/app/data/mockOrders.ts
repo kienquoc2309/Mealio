@@ -15,7 +15,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
-  userId: number;
+  userId: string;
   items: OrderItem[];
   subtotal: number;
   deliveryFee: number;
@@ -29,7 +29,7 @@ export interface Order {
 export const mockOrders: Order[] = [
   {
     id: "ORD-2026-001",
-    userId: 1,
+    userId: "1",
     items: [
       {
         id: 9,
@@ -58,7 +58,7 @@ export const mockOrders: Order[] = [
   },
   {
     id: "ORD-2026-002",
-    userId: 1,
+    userId: "1",
     items: [
       {
         id: 14,
@@ -87,7 +87,7 @@ export const mockOrders: Order[] = [
   },
   {
     id: "ORD-2026-003",
-    userId: 1,
+    userId: "1",
     items: [
       {
         id: 17,

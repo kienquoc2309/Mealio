@@ -29,7 +29,7 @@ const STEPS: OrderStatus[] = ['Pending', 'Preparing', 'On the Way', 'Delivered']
 const myOrders = computed(() => {
   if (!auth.currentUser) return []
   return auth.orders
-    .filter((o) => o.userId === auth.currentUser!.id)
+    .filter((o) => o.userId === auth.currentUser!._id)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 })
 
