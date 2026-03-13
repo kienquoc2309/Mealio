@@ -13,7 +13,7 @@ export interface CurrentUser {
   email: string
   role: UserRole
   phone: string
-  address: string
+  address: { street: string; city: string }
   createdAt: string
   initials: string
   avatarColor: string
@@ -47,7 +47,7 @@ function profileToCurrentUser(profile: UserProfile): CurrentUser {
     email: profile.email,
     role: profile.role,
     phone: profile.phone ?? '',
-    address: profile.address ?? '',
+    address: profile.address ?? { street: '', city: '' },
     createdAt: profile.createdAt,
     initials: getInitials(profile.name),
     avatarColor: getAvatarColor(profile.name),
@@ -140,7 +140,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const updateProfile = async (data: { name?: string; phone?: string; address?: string }): Promise<{ success: boolean; message: string }> => {
+  const updateProfile = async (data: { name?: string; phone?: string; address?: { street?: string; city?: string } }): Promise<{ success: boolean; message: string }> => {
     if (!currentUser.value) return { success: false, message: 'Not logged in' }
     try {
       const profile = await authService.updateProfile(data)

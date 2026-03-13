@@ -9,7 +9,8 @@ const form = ref({
   name: auth.currentUser?.name ?? '',
   email: auth.currentUser?.email ?? '',
   phone: auth.currentUser?.phone ? formatPhone(auth.currentUser.phone) : '',
-  address: auth.currentUser?.address ?? '',
+  street: auth.currentUser?.address?.street ?? '',
+  city: auth.currentUser?.address?.city ?? '',
 })
 
 const saved = ref(false)
@@ -54,7 +55,7 @@ const handleSubmit = async () => {
   const result = await auth.updateProfile({
     name: form.value.name,
     phone: form.value.phone,
-    address: form.value.address,
+    address: { street: form.value.street, city: form.value.city },
   })
   saving.value = false
   if (result.success) {
@@ -71,7 +72,8 @@ const resetForm = () => {
     name: auth.currentUser.name,
     email: auth.currentUser.email,
     phone: auth.currentUser.phone ? formatPhone(auth.currentUser.phone) : '',
-    address: auth.currentUser.address,
+    street: auth.currentUser.address?.street ?? '',
+    city: auth.currentUser.address?.city ?? '',
   }
   phoneError.value = ''
 }
@@ -183,10 +185,19 @@ const joinDate = computed(() => {
                 <p v-if="phoneError" class="text-red-500 text-xs mt-1">{{ phoneError }}</p>
               </div>
               <div>
-                <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1.5" :style="{ fontWeight: 600 }">Delivery Address</label>
+                <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1.5" :style="{ fontWeight: 600 }">Street, Ward (District)</label>
                 <div class="relative">
                   <MapPin class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input type="text" v-model="form.address" class="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-xl text-sm outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 dark:focus:ring-green-900/30 transition-all" />
+                  <input type="text" v-model="form.street" placeholder="e.g. 196 Hoang Dieu, District 4" class="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-xl text-sm outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 dark:focus:ring-green-900/30 transition-all" />
+                </div>
+              </div>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-5">
+              <div>
+                <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1.5" :style="{ fontWeight: 600 }">City</label>
+                <div class="relative">
+                  <MapPin class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input type="text" v-model="form.city" placeholder="e.g. Ho Chi Minh City" class="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-xl text-sm outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 dark:focus:ring-green-900/30 transition-all" />
                 </div>
               </div>
             </div>

@@ -9,7 +9,8 @@ const auth = useAuthStore()
 
 const receiverName = ref('')
 const phone = ref('')
-const address = ref('')
+const street = ref('')
+const city = ref('')
 const phoneError = ref('')
 
 const formatPhone = (raw: string): string => {
@@ -50,7 +51,8 @@ const fillFromProfile = (user: typeof auth.currentUser) => {
   if (!user) return
   if (!receiverName.value) receiverName.value = user.name
   if (!phone.value && user.phone) phone.value = formatPhone(user.phone)
-  if (!address.value) address.value = user.address
+  if (!street.value) street.value = user.address?.street ?? ''
+  if (!city.value) city.value = user.address?.city ?? ''
 }
 
 onMounted(() => {
@@ -159,19 +161,23 @@ const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(pri
             </div>
             <div class="space-y-3">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input
-                  v-model="receiverName"
-                  type="text"
-                  placeholder="Receiver name"
-                  class="px-4 py-2.5 font-medium border border-gray-200 dark:border-[#263a32] bg-white dark:bg-[#101a16] text-gray-900 dark:text-[#e2efe8] rounded-xl text-sm outline-none focus:border-green-300 dark:focus:border-green-600 placeholder-gray-400 dark:placeholder-[#7a9e8c]"
-                />
                 <div>
+                  <label class="block text-xs text-gray-500 dark:text-[#7a9e8c] mb-1.5" :style="{ fontWeight: 600 }">Receiver Name</label>
+                  <input
+                    v-model="receiverName"
+                    type="text"
+                    placeholder="e.g. Nguyen Van A"
+                    class="w-full px-4 py-2.5 font-medium border border-gray-200 dark:border-[#263a32] bg-white dark:bg-[#101a16] text-gray-900 dark:text-[#e2efe8] rounded-xl text-sm outline-none focus:border-green-300 dark:focus:border-green-600 placeholder-gray-400 dark:placeholder-[#7a9e8c]"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-500 dark:text-[#7a9e8c] mb-1.5" :style="{ fontWeight: 600 }">Phone Number</label>
                   <input
                     v-model="phone"
                     @input="onPhoneInput"
                     @blur="validatePhone"
                     type="tel"
-                    placeholder="Phone number (e.g. 0788 808 474)"
+                    placeholder="e.g. 0939 143 228"
                     :class="[
                       'w-full px-4 py-2.5 font-medium border rounded-xl text-sm outline-none placeholder-gray-400 dark:placeholder-[#7a9e8c] bg-white dark:bg-[#101a16] text-gray-900 dark:text-[#e2efe8]',
                       phoneError ? 'border-red-400 dark:border-red-500 focus:border-red-400' : 'border-gray-200 dark:border-[#263a32] focus:border-green-300 dark:focus:border-green-600'
@@ -180,12 +186,26 @@ const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(pri
                   <p v-if="phoneError" class="text-red-500 text-xs mt-1">{{ phoneError }}</p>
                 </div>
               </div>
-              <input
-                v-model="address"
-                type="text"
-                placeholder="Full address (e.g. 196 Hoang Dieu, District 4, HCMC)"
-                class="w-full px-4 py-2.5 font-medium border border-gray-200 dark:border-[#263a32] bg-white dark:bg-[#101a16] text-gray-900 dark:text-[#e2efe8] rounded-xl text-sm outline-none focus:border-green-300 dark:focus:border-green-600 placeholder-gray-400 dark:placeholder-[#7a9e8c]"
-              />
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-gray-500 dark:text-[#7a9e8c] mb-1.5" :style="{ fontWeight: 600 }">Street, Ward (District)</label>
+                  <input
+                    v-model="street"
+                    type="text"
+                    placeholder="e.g. 196 Hoang Dieu, District 4"
+                    class="w-full px-4 py-2.5 font-medium border border-gray-200 dark:border-[#263a32] bg-white dark:bg-[#101a16] text-gray-900 dark:text-[#e2efe8] rounded-xl text-sm outline-none focus:border-green-300 dark:focus:border-green-600 placeholder-gray-400 dark:placeholder-[#7a9e8c]"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-500 dark:text-[#7a9e8c] mb-1.5" :style="{ fontWeight: 600 }">City</label>
+                  <input
+                    v-model="city"
+                    type="text"
+                    placeholder="e.g. Ho Chi Minh City"
+                    class="w-full px-4 py-2.5 font-medium border border-gray-200 dark:border-[#263a32] bg-white dark:bg-[#101a16] text-gray-900 dark:text-[#e2efe8] rounded-xl text-sm outline-none focus:border-green-300 dark:focus:border-green-600 placeholder-gray-400 dark:placeholder-[#7a9e8c]"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

@@ -35,8 +35,8 @@ export class User {
   @Prop()
   phone?: string;
 
-  @Prop()
-  address?: string;
+  @Prop({ type: { street: String, city: String } })
+  address?: { street: string; city: string };
 
   @Prop({
     type: [{ foodId: { type: Types.ObjectId, ref: 'Food' }, quantity: Number }],

@@ -31,7 +31,7 @@ export class UsersController {
   @Patch('update-profile')
   async updateProfile(
     @Req() req: AuthenticatedRequest,
-    @Body() body: { name?: string; phone?: string; address?: string },
+    @Body() body: { name?: string; phone?: string; address?: { street?: string; city?: string } },
   ) {
     try {
       return await this.usersService.updateProfile(req.userId, body);

@@ -13,7 +13,7 @@ export interface UserProfile {
   email: string
   role: 'user' | 'admin'
   phone?: string
-  address?: string
+  address?: { street: string; city: string }
   createdAt: string
   updatedAt: string
 }
@@ -38,7 +38,7 @@ export const authService = {
     return data.user
   },
 
-  async updateProfile(body: { name?: string; phone?: string; address?: string }): Promise<UserProfile> {
+  async updateProfile(body: { name?: string; phone?: string; address?: { street?: string; city?: string } }): Promise<UserProfile> {
     const { data } = await api.patch<{ success: boolean; user: UserProfile }>('/users/update-profile', body)
     return data.user
   },
