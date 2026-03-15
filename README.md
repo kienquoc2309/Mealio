@@ -16,8 +16,7 @@ A food ordering platform where users can browse foods, add items to a cart, plac
 
 - [Node.js](https://nodejs.org/) (v18 or higher)
 - [MongoDB](https://www.mongodb.com/) (local or [MongoDB Atlas](https://www.mongodb.com/atlas))
-- [pnpm](https://pnpm.io/) (for frontend)
-- [npm](https://www.npmjs.com/) (for backend)
+- [npm](https://www.npmjs.com/)
 
 ## Getting Started
 
@@ -43,19 +42,19 @@ cp .env.example .env
 
 Fill in the required environment variables in `.env`:
 
-| Variable | Description |
-|---|---|
-| `MONGO_URI` | MongoDB connection string |
-| `JWT_SECRET` | Secret key for access tokens |
-| `JWT_REFRESH_SECRET` | Secret key for refresh tokens |
-| `CLOUD_NAME`, `CLOUD_KEY`, `CLOUD_SECRET` | Cloudinary credentials for image uploads |
-| `STRIPE_SECRET_KEY` | Stripe secret key for payments |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
-| `SMTP_USER`, `SMTP_PASS` | Gmail SMTP credentials for sending emails |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth 2.0 credentials |
-| `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET` | Facebook OAuth credentials |
-| `FRONTEND_URL` | Frontend URL (default: `http://localhost:5173`) |
-| `BACKEND_URL` | Backend URL (default: `http://localhost:5000`) |
+| Variable                                   | Description                                     |
+| ------------------------------------------ | ----------------------------------------------- |
+| `MONGO_URI`                                | MongoDB connection string                       |
+| `JWT_SECRET`                               | Secret key for access tokens                    |
+| `JWT_REFRESH_SECRET`                       | Secret key for refresh tokens                   |
+| `CLOUD_NAME`, `CLOUD_KEY`, `CLOUD_SECRET`  | Cloudinary credentials for image uploads        |
+| `STRIPE_SECRET_KEY`                        | Stripe secret key for payments                  |
+| `STRIPE_WEBHOOK_SECRET`                    | Stripe webhook signing secret                   |
+| `SMTP_USER`, `SMTP_PASS`                   | Gmail SMTP credentials for sending emails       |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth 2.0 credentials                    |
+| `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`   | Facebook OAuth credentials                      |
+| `FRONTEND_URL`                             | Frontend URL (default: `http://localhost:5173`) |
+| `BACKEND_URL`                              | Backend URL (default: `http://localhost:5000`)  |
 
 Start the backend development server:
 
@@ -119,18 +118,18 @@ Mealio/
 
 ### Backend
 
-| Command | Description |
-|---|---|
-| `npm run start:dev` | Start in development mode (hot reload) |
-| `npm run start:prod` | Start in production mode |
-| `npm run build` | Build for production |
-| `npm run seed` | Seed database with sample data |
-| `npm run lint` | Run ESLint |
-| `npm run test` | Run unit tests |
+| Command              | Description                            |
+| -------------------- | -------------------------------------- |
+| `npm run start:dev`  | Start in development mode (hot reload) |
+| `npm run start:prod` | Start in production mode               |
+| `npm run build`      | Build for production                   |
+| `npm run seed`       | Seed database with sample data         |
+| `npm run lint`       | Run ESLint                             |
+| `npm run test`       | Run unit tests                         |
 
 ### Frontend
 
-| Command | Description |
-|---|---|
-| `pnpm dev` | Start development server |
-| `pnpm build` | Build for production |
+| Command      | Description              |
+| ------------ | ------------------------ |
+| `pnpm dev`   | Start development server |
+| `pnpm build` | Build for production     |
