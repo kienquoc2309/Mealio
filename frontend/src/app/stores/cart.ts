@@ -1,16 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { cartService, type CartItemResponse } from '../services/cartService'
+import { cartService } from '../services/cartService'
 import { useAuthStore } from './auth'
-
-export interface CartItem {
-  foodId: string
-  name: string
-  description?: string
-  price: number
-  image: string
-  quantity: number
-}
+import type { CartItem, CartItemResponse } from '../types'
 
 export const useCartStore = defineStore('cart', () => {
   const cartItems = ref<CartItem[]>([])

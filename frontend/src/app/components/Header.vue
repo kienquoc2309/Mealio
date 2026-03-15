@@ -7,7 +7,8 @@ import {
 } from 'lucide-vue-next'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
-import { foodService, type FoodItem } from '../services/foodService'
+import { foodService } from '../services/foodService'
+import type { FoodItem } from '../types'
 
 const cart = useCartStore()
 const auth = useAuthStore()
@@ -313,14 +314,14 @@ const handleLogout = async () => {
             </div>
           </template>
           <template v-else>
-            <router-link
-              to="/login"
+            <button
+              @click="router.push('/login?t=' + Date.now())"
               class="hidden sm:flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm rounded-xl hover:bg-green-700 active:scale-95 transition-all shadow-sm"
               :style="{ fontWeight: 600 }"
             >
               <User class="w-4 h-4" />
               Login
-            </router-link>
+            </button>
           </template>
 
           <!-- Mobile menu toggle -->
@@ -391,15 +392,14 @@ const handleLogout = async () => {
         </button>
       </template>
       <template v-else>
-        <router-link
-          to="/login"
-          @click="mobileOpen = false"
-          class="flex items-center gap-2 px-4 py-3 bg-green-600 text-white text-sm rounded-xl mt-2"
+        <button
+          @click="mobileOpen = false; router.push('/login?t=' + Date.now())"
+          class="w-full flex items-center gap-2 px-4 py-3 bg-green-600 text-white text-sm rounded-xl mt-2"
           :style="{ fontWeight: 600 }"
         >
           <User class="w-4 h-4" />
           Login
-        </router-link>
+        </button>
       </template>
     </div>
   </header>

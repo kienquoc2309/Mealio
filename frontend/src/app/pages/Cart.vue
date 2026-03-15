@@ -1,17 +1,29 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue'
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, Tag, ChevronRight, Loader2, MapPin } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, Tag, ChevronRight, Loader2, MapPin, CheckCircle2, CreditCard } from 'lucide-vue-next'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
+import { useOrdersStore } from '../stores/orders'
+import type { PaymentMethod } from '../types'
 
+const router = useRouter()
 const cart = useCartStore()
 const auth = useAuthStore()
+const ordersStore = useOrdersStore()
 
 const receiverName = ref('')
 const phone = ref('')
 const street = ref('')
 const city = ref('')
 const phoneError = ref('')
+const paymentMethod = ref<PaymentMethod>('stripe')
+
+const paymentOptions: { value: PaymentMethod; label: string; logo: string; description: string; comingSoon?: boolean }[] = [
+  { value: 'stripe', label: 'Stripe', logo: '/stripe.svg', description: 'Credit / Debit Card' },
+  { value: 'vnpay', label: 'VNPay', logo: '/vnpay.svg', description: 'Vietnamese Bank Transfer', comingSoon: true },
+  { value: 'momo', label: 'MoMo', logo: '/momo.png', description: 'MoMo E-Wallet', comingSoon: true },
+]
 
 const formatPhone = (raw: string): string => {
   const digits = raw.replace(/\D/g, '')
@@ -70,9 +82,50 @@ watch(() => auth.currentUser, (user) => {
   }
 })
 
+const checkoutError = ref('')
+const orderSuccess = ref(false)
+
 const deliveryFee = computed(() => cart.totalPrice > 500000 ? 0 : 30000)
 const tax = computed(() => cart.totalPrice * 0.08)
 const total = computed(() => cart.totalPrice + deliveryFee.value + tax.value)
+
+const canCheckout = computed(() => {
+  return receiverName.value.trim() && phone.value.trim() && street.value.trim() && city.value.trim() && !phoneError.value
+})
+
+const handleCheckout = async () => {
+  if (!canCheckout.value) {
+    checkoutError.value = 'Please fill in all delivery address fields'
+    return
+  }
+
+  // Strip phone formatting to raw digits for API
+  const rawPhone = phone.value.replace(/\D/g, '')
+  const result = await ordersStore.placeOrder(
+    {
+      receiverName: receiverName.value.trim(),
+      phone: rawPhone,
+      street: street.value.trim(),
+      city: city.value.trim(),
+    },
+    paymentMethod.value,
+  )
+
+  if (result.success) {
+    cart.cartItems = []
+    checkoutError.value = ''
+
+    // Redirect to payment gateway if URL provided (e.g. Stripe)
+    if (result.paymentUrl) {
+      window.location.href = result.paymentUrl
+      return
+    }
+
+    orderSuccess.value = true
+  } else {
+    checkoutError.value = result.message
+  }
+}
 
 const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(price) + '₫'
 </script>
@@ -104,6 +157,36 @@ const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(pri
         Browse Menu
         <ChevronRight class="w-4 h-4" />
       </router-link>
+    </div>
+  </main>
+
+  <!-- Order Success -->
+  <main v-else-if="orderSuccess" class="min-h-screen bg-gray-50 dark:bg-[#0c1210] pt-24 flex items-center justify-center px-4">
+    <div class="text-center max-w-sm">
+      <div class="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+        <CheckCircle2 class="w-10 h-10 text-green-500" />
+      </div>
+      <h2 class="text-gray-900 dark:text-[#e2efe8] text-2xl mb-3" :style="{ fontWeight: 800 }">Order Placed!</h2>
+      <p class="text-gray-500 dark:text-[#7a9e8c] text-sm mb-8">
+        Your order has been placed successfully. You can track it in your orders page.
+      </p>
+      <div class="flex flex-col gap-3">
+        <router-link
+          to="/my-orders"
+          class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 active:scale-95 transition-all text-sm"
+          :style="{ fontWeight: 700 }"
+        >
+          View My Orders
+          <ChevronRight class="w-4 h-4" />
+        </router-link>
+        <router-link
+          to="/menu"
+          class="inline-flex items-center justify-center gap-2 px-6 py-3 border border-gray-200 dark:border-[#263a32] text-gray-600 dark:text-[#7a9e8c] rounded-xl hover:border-green-200 dark:hover:border-green-700 hover:text-green-600 dark:hover:text-green-400 transition-all text-sm"
+          :style="{ fontWeight: 600 }"
+        >
+          Continue Shopping
+        </router-link>
+      </div>
     </div>
   </main>
 
@@ -209,6 +292,39 @@ const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(pri
             </div>
           </div>
 
+          <!-- Payment Method -->
+          <div class="bg-white dark:bg-[#182420] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-[#263a32]">
+            <div class="flex items-center gap-2 mb-4">
+              <CreditCard class="w-4 h-4 text-green-600 dark:text-green-400" />
+              <span class="text-gray-900 dark:text-[#e2efe8] text-sm" :style="{ fontWeight: 700 }">Payment Method</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button
+                v-for="option in paymentOptions"
+                :key="option.value"
+                @click="!option.comingSoon && (paymentMethod = option.value)"
+                :disabled="option.comingSoon"
+                :class="[
+                  'relative flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all',
+                  option.comingSoon
+                    ? 'border-gray-200 dark:border-[#263a32] bg-gray-50 dark:bg-[#101a16] opacity-60 cursor-not-allowed'
+                    : paymentMethod === option.value
+                      ? 'border-green-500 dark:border-green-500 bg-green-50 dark:bg-green-900/20'
+                      : 'border-gray-200 dark:border-[#263a32] bg-white dark:bg-[#101a16] hover:border-green-200 dark:hover:border-green-800'
+                ]"
+              >
+                <span v-if="option.comingSoon" class="absolute top-1.5 right-1.5 px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-[10px] rounded-md" :style="{ fontWeight: 700 }">Coming Soon</span>
+                <div class="w-10 h-8 flex items-center justify-center flex-shrink-0">
+                  <img :src="option.logo" :alt="option.label" class="max-w-full max-h-full object-contain" />
+                </div>
+                <div>
+                  <p :class="['text-sm', option.comingSoon ? 'text-gray-400 dark:text-[#5a7e6c]' : paymentMethod === option.value ? 'text-green-700 dark:text-green-400' : 'text-gray-900 dark:text-[#e2efe8]']" :style="{ fontWeight: 700 }">{{ option.label }}</p>
+                  <p :class="['text-xs', option.comingSoon ? 'text-gray-300 dark:text-[#4a6e5c]' : paymentMethod === option.value ? 'text-green-600 dark:text-green-500' : 'text-gray-400 dark:text-[#7a9e8c]']">{{ option.description }}</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
           <!-- Promo Code -->
           <div class="bg-white dark:bg-[#182420] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-[#263a32]">
             <div class="flex items-center gap-2 mb-3">
@@ -256,8 +372,20 @@ const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(pri
                 <span class="text-green-600 dark:text-green-400 text-lg" :style="{ fontWeight: 800 }">{{ formatPrice(total) }}</span>
               </div>
             </div>
-            <button class="w-full py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 active:scale-95 transition-all shadow-lg shadow-green-200 dark:shadow-green-900/30 text-sm" :style="{ fontWeight: 700 }">
-              Proceed to Checkout
+            <p v-if="checkoutError" class="text-red-500 text-xs mb-3">{{ checkoutError }}</p>
+            <button
+              @click="handleCheckout"
+              :disabled="ordersStore.placing || !canCheckout"
+              :class="[
+                'w-full py-4 text-white rounded-xl transition-all shadow-lg shadow-green-200 dark:shadow-green-900/30 text-sm',
+                canCheckout && !ordersStore.placing ? 'bg-green-600 hover:bg-green-700 active:scale-95' : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
+              ]"
+              :style="{ fontWeight: 700 }"
+            >
+              <span v-if="ordersStore.placing" class="flex items-center justify-center gap-2">
+                <Loader2 class="w-4 h-4 animate-spin" /> Processing...
+              </span>
+              <span v-else>Proceed to Payment</span>
             </button>
             <router-link to="/menu" class="flex items-center justify-center gap-2 w-full mt-3 py-3 border border-gray-200 dark:border-[#263a32] text-gray-600 dark:text-[#7a9e8c] rounded-xl hover:border-green-200 dark:hover:border-green-700 hover:text-green-600 dark:hover:text-green-400 transition-all text-sm" :style="{ fontWeight: 600 }">
               <ArrowLeft class="w-4 h-4" />

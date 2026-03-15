@@ -1,13 +1,5 @@
 import api from './api'
-
-export interface CartItemResponse {
-  foodId: string
-  name: string
-  description: string
-  price: number
-  image: string
-  quantity: number
-}
+import type { CartItemResponse } from '../types'
 
 export const cartService = {
   async getCart(): Promise<CartItemResponse[]> {

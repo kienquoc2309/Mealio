@@ -3,7 +3,8 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ShoppingCart, Star, Plus, Minus, Check, SlidersHorizontal, Loader2 } from 'lucide-vue-next'
 import { useCartStore } from '../stores/cart'
-import { foodService, type FoodItem, type FoodCategory } from '../services/foodService'
+import { foodService } from '../services/foodService'
+import type { FoodItem, FoodCategory } from '../types'
 import { categories as fallbackCategories, dishes as fallbackDishes, type Dish } from '../data/menuData'
 
 const route = useRoute()

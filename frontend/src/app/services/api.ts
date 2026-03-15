@@ -40,6 +40,10 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
           return api(originalRequest)
         }
+
+        // Refresh returned success: false — clear tokens
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
       } catch {
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')

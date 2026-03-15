@@ -26,11 +26,39 @@ export class User {
   })
   email!: string;
 
-  @Prop({ required: true })
+  @Prop({
+    required: function (this: User) {
+      return this.authProvider === 'local' || !this.authProvider;
+    },
+  })
   password!: string;
 
   @Prop({ type: String, enum: ['user', 'admin'], default: 'user' })
   role!: string;
+
+  @Prop({ default: false })
+  isEmailVerified!: boolean;
+
+  @Prop()
+  emailVerificationToken?: string;
+
+  @Prop()
+  emailVerificationExpires?: Date;
+
+  @Prop()
+  resetPasswordToken?: string;
+
+  @Prop()
+  resetPasswordExpires?: Date;
+
+  @Prop()
+  googleId?: string;
+
+  @Prop()
+  facebookId?: string;
+
+  @Prop({ type: String, enum: ['local', 'google', 'facebook'], default: 'local' })
+  authProvider!: string;
 
   @Prop()
   phone?: string;

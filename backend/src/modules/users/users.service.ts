@@ -23,7 +23,11 @@ export class UsersService {
 
   async updateProfile(
     userId: string,
-    data: { name?: string; phone?: string; address?: { street?: string; city?: string } },
+    data: {
+      name?: string;
+      phone?: string;
+      address?: { street?: string; city?: string };
+    },
   ) {
     const user = await this.userModel
       .findByIdAndUpdate(userId, data, { returnDocument: 'after' })

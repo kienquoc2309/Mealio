@@ -1,23 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import { authService, type UserProfile } from '../services/authService'
-import { mockOrders, type Order, type OrderStatus } from '../data/mockOrders'
+import { authService } from '../services/authService'
 import { useCartStore } from './cart'
-
-export type UserRole = 'user' | 'admin'
-export type Theme = 'light' | 'dark'
-
-export interface CurrentUser {
-  _id: string
-  name: string
-  email: string
-  role: UserRole
-  phone: string
-  address: { street: string; city: string }
-  createdAt: string
-  initials: string
-  avatarColor: string
-}
+import type { Theme, CurrentUser, UserProfile } from '../types'
 
 const AVATAR_COLORS = [
   'bg-blue-500', 'bg-purple-500', 'bg-pink-500', 'bg-amber-500',
@@ -57,7 +42,6 @@ function profileToCurrentUser(profile: UserProfile): CurrentUser {
 export const useAuthStore = defineStore('auth', () => {
   const currentUser = ref<CurrentUser | null>(null)
   const theme = ref<Theme>((localStorage.getItem('mealio-theme') as Theme) || 'light')
-  const orders = ref<Order[]>([...mockOrders])
   const loading = ref(false)
 
   watch(theme, (val) => {
@@ -157,15 +141,9 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('mealio-theme', theme.value)
   }
 
-  const updateOrderStatus = (orderId: string, status: OrderStatus) => {
-    const order = orders.value.find((o) => o.id === orderId)
-    if (order) order.status = status
-  }
-
   return {
     currentUser,
     theme,
-    orders,
     loading,
     login,
     register,
@@ -173,6 +151,5 @@ export const useAuthStore = defineStore('auth', () => {
     restoreSession,
     updateProfile,
     toggleTheme,
-    updateOrderStatus,
   }
 })

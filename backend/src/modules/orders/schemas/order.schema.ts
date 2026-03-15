@@ -100,6 +100,9 @@ export class Order {
 
   @Prop({ default: '' })
   transactionId!: string;
+
+  @Prop({ default: '' })
+  sessionId!: string;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

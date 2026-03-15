@@ -1,21 +1,9 @@
 import api from './api'
+import type { AuthResponse, UserProfile } from '../types'
 
-export interface AuthResponse {
+interface SimpleResponse {
   success: boolean
   message: string
-  accessToken?: string
-  refreshToken?: string
-}
-
-export interface UserProfile {
-  _id: string
-  name: string
-  email: string
-  role: 'user' | 'admin'
-  phone?: string
-  address?: { street: string; city: string }
-  createdAt: string
-  updatedAt: string
 }
 
 export const authService = {
@@ -55,5 +43,27 @@ export const authService = {
 
   async deleteUser(userId: string): Promise<void> {
     await api.delete(`/users/${userId}`)
+  },
+
+  // Email verification
+  async verifyEmail(token: string): Promise<SimpleResponse> {
+    const { data } = await api.get<SimpleResponse>(`/auth/verify-email?token=${token}`)
+    return data
+  },
+
+  async resendVerification(email: string): Promise<SimpleResponse> {
+    const { data } = await api.post<SimpleResponse>('/auth/resend-verification', { email })
+    return data
+  },
+
+  // Forgot / Reset password
+  async forgotPassword(email: string): Promise<SimpleResponse> {
+    const { data } = await api.post<SimpleResponse>('/auth/forgot-password', { email })
+    return data
+  },
+
+  async resetPassword(token: string, password: string): Promise<SimpleResponse> {
+    const { data } = await api.post<SimpleResponse>('/auth/reset-password', { token, password })
+    return data
   },
 }

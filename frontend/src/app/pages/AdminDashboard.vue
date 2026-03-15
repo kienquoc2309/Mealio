@@ -6,20 +6,31 @@ import {
   X, Check, ChevronDown, LayoutDashboard, LogOut, Search, Star, Loader2,
 } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
-import type { OrderStatus } from '../data/mockOrders'
-import { authService, type UserProfile } from '../services/authService'
-import { foodService, type FoodItem, type FoodCategory } from '../services/foodService'
+import { orderService } from '../services/orderService'
+import { authService } from '../services/authService'
+import { foodService } from '../services/foodService'
+import type { OrderResponse, OrderStatus, UserProfile, FoodItem, FoodCategory } from '../types'
 
 type Tab = 'dashboard' | 'food' | 'users' | 'orders'
 
-const STATUS_OPTIONS: OrderStatus[] = ['Pending', 'Preparing', 'On the Way', 'Delivered', 'Cancelled']
+const STATUS_OPTIONS: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'delivering', 'delivered', 'cancelled']
+
+const statusLabel: Record<OrderStatus, string> = {
+  pending: 'Pending',
+  confirmed: 'Confirmed',
+  preparing: 'Preparing',
+  delivering: 'On the Way',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+}
 
 const statusColor: Record<OrderStatus, string> = {
-  Pending: 'bg-yellow-100 text-yellow-700',
-  Preparing: 'bg-blue-100 text-blue-700',
-  'On the Way': 'bg-purple-100 text-purple-700',
-  Delivered: 'bg-green-100 text-green-700',
-  Cancelled: 'bg-red-100 text-red-600',
+  pending: 'bg-yellow-100 text-yellow-700',
+  confirmed: 'bg-blue-100 text-blue-700',
+  preparing: 'bg-indigo-100 text-indigo-700',
+  delivering: 'bg-purple-100 text-purple-700',
+  delivered: 'bg-green-100 text-green-700',
+  cancelled: 'bg-red-100 text-red-600',
 }
 
 const auth = useAuthStore()
@@ -120,6 +131,7 @@ const fetchUsers = async () => {
 
 onMounted(() => {
   fetchFoods()
+  fetchOrders()
 })
 
 watch(activeTab, (tab) => {
@@ -182,8 +194,34 @@ const savePassword = async () => {
   }
 }
 
-const totalRevenue = computed(() => auth.orders.filter(o => o.status === 'Delivered').reduce((s, o) => s + o.total, 0))
-const pendingOrders = computed(() => auth.orders.filter(o => o.status === 'Pending' || o.status === 'Preparing').length)
+const allOrders = ref<OrderResponse[]>([])
+const ordersLoading = ref(false)
+
+const fetchOrders = async () => {
+  ordersLoading.value = true
+  try {
+    allOrders.value = await orderService.listAllOrders()
+  } catch {
+    // silently fail for dashboard
+  } finally {
+    ordersLoading.value = false
+  }
+}
+
+const totalRevenue = computed(() => allOrders.value.filter(o => o.orderStatus === 'delivered').reduce((s, o) => s + o.totalAmount, 0))
+const pendingOrders = computed(() => allOrders.value.filter(o => o.orderStatus === 'pending' || o.orderStatus === 'preparing').length)
+
+const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+  try {
+    const updated = await orderService.updateStatus(orderId, newStatus)
+    const idx = allOrders.value.findIndex(o => o._id === orderId)
+    if (idx !== -1) allOrders.value[idx] = updated
+  } catch {
+    // silently fail
+  }
+}
+
+const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(price) + '₫'
 
 const handleLogout = async () => { await auth.logout(); router.push('/') }
 
@@ -291,9 +329,10 @@ const filteredDishes = computed(() => foods.value.filter(f =>
   getCategoryName(f).toLowerCase().includes(dishSearch.value.toLowerCase())
 ))
 
-const filteredOrders = computed(() => auth.orders.filter(o =>
-  o.id.toLowerCase().includes(orderSearch.value.toLowerCase()) ||
-  o.status.toLowerCase().includes(orderSearch.value.toLowerCase())
+const filteredOrders = computed(() => allOrders.value.filter(o =>
+  o._id.toLowerCase().includes(orderSearch.value.toLowerCase()) ||
+  o.orderStatus.toLowerCase().includes(orderSearch.value.toLowerCase()) ||
+  (statusLabel[o.orderStatus as OrderStatus] || '').toLowerCase().includes(orderSearch.value.toLowerCase())
 ))
 
 const navItems: { tab: Tab; label: string }[] = [
@@ -371,8 +410,8 @@ const navIcons = { dashboard: LayoutDashboard, food: UtensilsCrossed, users: Use
             <div v-for="s in [
               { label: 'Total Dishes', value: foods.length, icon: UtensilsCrossed, color: 'bg-green-100 text-green-600', change: 'items on menu' },
               { label: 'Total Users', value: users.length, icon: Users, color: 'bg-blue-100 text-blue-600', change: 'registered users' },
-              { label: 'Total Orders', value: auth.orders.length, icon: ShoppingBag, color: 'bg-purple-100 text-purple-600', change: `${pendingOrders} pending` },
-              { label: 'Revenue', value: `$${totalRevenue.toFixed(0)}`, icon: TrendingUp, color: 'bg-amber-100 text-amber-600', change: 'from delivered orders' },
+              { label: 'Total Orders', value: allOrders.length, icon: ShoppingBag, color: 'bg-purple-100 text-purple-600', change: `${pendingOrders} pending` },
+              { label: 'Revenue', value: formatPrice(totalRevenue), icon: TrendingUp, color: 'bg-amber-100 text-amber-600', change: 'from delivered orders' },
             ]" :key="s.label" class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
               <div :class="['w-10 h-10', s.color, 'rounded-xl flex items-center justify-center mb-3']">
                 <component :is="s.icon" class="w-5 h-5" />
@@ -397,14 +436,14 @@ const navIcons = { dashboard: LayoutDashboard, food: UtensilsCrossed, users: Use
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
-                  <tr v-for="order in auth.orders.slice(0, 5)" :key="order.id" class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-3 text-xs text-gray-700" :style="{ fontWeight: 600 }">{{ order.id }}</td>
+                  <tr v-for="order in allOrders.slice(0, 5)" :key="order._id" class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-3 text-xs text-gray-700" :style="{ fontWeight: 600 }">{{ order._id.slice(-8).toUpperCase() }}</td>
                     <td class="px-6 py-3 text-xs text-gray-500">{{ order.items.length }} items</td>
-                    <td class="px-6 py-3 text-xs text-green-600" :style="{ fontWeight: 700 }">${{ order.total.toFixed(2) }}</td>
+                    <td class="px-6 py-3 text-xs text-green-600" :style="{ fontWeight: 700 }">{{ formatPrice(order.totalAmount) }}</td>
                     <td class="px-6 py-3">
-                      <span :class="['inline-flex px-2.5 py-1 rounded-full text-xs', statusColor[order.status]]" :style="{ fontWeight: 600 }">{{ order.status }}</span>
+                      <span :class="['inline-flex px-2.5 py-1 rounded-full text-xs', statusColor[order.orderStatus as OrderStatus]]" :style="{ fontWeight: 600 }">{{ statusLabel[order.orderStatus as OrderStatus] }}</span>
                     </td>
-                    <td class="px-6 py-3 text-xs text-gray-400">{{ new Date(order.date).toLocaleDateString() }}</td>
+                    <td class="px-6 py-3 text-xs text-gray-400">{{ new Date(order.createdAt).toLocaleDateString() }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -589,18 +628,18 @@ const navIcons = { dashboard: LayoutDashboard, food: UtensilsCrossed, users: Use
             </div>
             <div class="flex gap-2 flex-wrap">
               <button
-                v-for="s in ['All', ...STATUS_OPTIONS]"
+                v-for="s in ['all', ...STATUS_OPTIONS]"
                 :key="s"
-                @click="orderSearch = s === 'All' ? '' : s"
+                @click="orderSearch = s === 'all' ? '' : s"
                 :class="[
                   'text-xs px-3 py-1.5 rounded-full transition-colors',
-                  (s === 'All' && !orderSearch) || orderSearch === s
+                  (s === 'all' && !orderSearch) || orderSearch === s
                     ? 'bg-green-600 text-white'
                     : 'bg-white border border-gray-200 text-gray-600 hover:border-green-300'
                 ]"
                 :style="{ fontWeight: 600 }"
               >
-                {{ s }}
+                {{ s === 'all' ? 'All' : statusLabel[s as OrderStatus] }}
               </button>
             </div>
           </div>
@@ -613,34 +652,34 @@ const navIcons = { dashboard: LayoutDashboard, food: UtensilsCrossed, users: Use
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
-                  <tr v-for="order in filteredOrders" :key="order.id" class="hover:bg-gray-50 transition-colors">
-                    <td class="px-5 py-3 text-xs text-gray-700" :style="{ fontWeight: 600 }">{{ order.id }}</td>
+                  <tr v-for="order in filteredOrders" :key="order._id" class="hover:bg-gray-50 transition-colors">
+                    <td class="px-5 py-3 text-xs text-gray-700" :style="{ fontWeight: 600 }">{{ order._id.slice(-8).toUpperCase() }}</td>
                     <td class="px-5 py-3">
                       <div class="flex -space-x-1.5">
-                        <img v-for="item in order.items.slice(0, 3)" :key="item.id" :src="item.image" :alt="item.name" class="w-7 h-7 rounded-md object-cover border border-white" />
+                        <img v-for="item in order.items.slice(0, 3)" :key="item.foodId" :src="item.image" :alt="item.name" class="w-7 h-7 rounded-md object-cover border border-white" />
                         <div v-if="order.items.length > 3" class="w-7 h-7 rounded-md bg-gray-100 border border-white flex items-center justify-center">
                           <span class="text-[10px] text-gray-500" :style="{ fontWeight: 600 }">+{{ order.items.length - 3 }}</span>
                         </div>
                       </div>
                     </td>
                     <td class="px-5 py-3">
-                      <span class="text-xs text-gray-500" :style="{ fontWeight: 500 }">User #{{ order.userId }}</span>
+                      <span class="text-xs text-gray-500" :style="{ fontWeight: 500 }">{{ order.address.receiverName }}</span>
                     </td>
-                    <td class="px-5 py-3 text-green-600 text-sm" :style="{ fontWeight: 700 }">${{ order.total.toFixed(2) }}</td>
+                    <td class="px-5 py-3 text-green-600 text-sm" :style="{ fontWeight: 700 }">{{ formatPrice(order.totalAmount) }}</td>
                     <td class="px-5 py-3">
                       <div class="relative inline-block">
                         <select
-                          :value="order.status"
-                          @change="auth.updateOrderStatus(order.id, ($event.target as HTMLSelectElement).value as OrderStatus)"
-                          :class="['appearance-none text-xs px-2.5 py-1.5 pr-6 rounded-full border cursor-pointer outline-none', statusColor[order.status]]"
+                          :value="order.orderStatus"
+                          @change="handleUpdateOrderStatus(order._id, ($event.target as HTMLSelectElement).value)"
+                          :class="['appearance-none text-xs px-2.5 py-1.5 pr-6 rounded-full border cursor-pointer outline-none', statusColor[order.orderStatus as OrderStatus]]"
                           :style="{ fontWeight: 600, borderColor: 'transparent' }"
                         >
-                          <option v-for="s in STATUS_OPTIONS" :key="s" :value="s">{{ s }}</option>
+                          <option v-for="s in STATUS_OPTIONS" :key="s" :value="s">{{ statusLabel[s] }}</option>
                         </select>
                         <ChevronDown class="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-60" />
                       </div>
                     </td>
-                    <td class="px-5 py-3 text-xs text-gray-400">{{ new Date(order.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}</td>
+                    <td class="px-5 py-3 text-xs text-gray-400">{{ new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}</td>
                   </tr>
                 </tbody>
               </table>
