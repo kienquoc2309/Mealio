@@ -2,6 +2,8 @@
 
 A food ordering platform where users can browse foods, add items to a cart, place orders, and pay through supported payment providers.
 
+**Demo:** [https://mealio-ashen.vercel.app](https://mealio-ashen.vercel.app/)
+
 ## Tech Stack
 
 - **Backend:** NestJS, MongoDB, Mongoose
