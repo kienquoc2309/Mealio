@@ -67,13 +67,13 @@ The backend will run at **http://localhost:5000**.
 
 ```bash
 cd frontend
-pnpm install
+npm install
 ```
 
 Start the frontend development server:
 
 ```bash
-pnpm dev
+npm dev
 ```
 
 The frontend will run at **http://localhost:5173**.
@@ -130,5 +130,5 @@ Mealio/
 
 | Command | Description |
 |---|---|
-| `pnpm dev` | Start development server |
-| `pnpm build` | Build for production |
+| `npm dev` | Start development server |
+| `npm build` | Build for production |
