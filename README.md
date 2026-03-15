@@ -4,6 +4,21 @@ A food ordering platform where users can browse foods, add items to a cart, plac
 
 **Demo:** [https://mealio-ashen.vercel.app](https://mealio-ashen.vercel.app/)
 
+## Demo Accounts
+
+You can log in using Google, Facebook, or the following test accounts:
+
+| Role  | Email              | Password    |
+| ----- | ------------------ | ----------- |
+| User  | user@mealio.com    | @user1234   |
+| Admin | admin@mealio.com   | @admin1234  |
+
+### Test Payment (Stripe)
+
+| Brand | Number           | CVC          | Date            |
+| ----- | ---------------- | ------------ | --------------- |
+| Visa  | 4242424242424242 | Any 3 digits | Any future date |
+
 ## Tech Stack
 
 - **Backend:** NestJS, MongoDB, Mongoose
@@ -129,11 +144,7 @@ Mealio/
 
 ### Frontend
 
-| Command      | Description              |
-| ------------ | ------------------------ |
-| `pnpm dev`   | Start development server |
-| `pnpm build` | Build for production     |
-| Command      | Description              |
-| ---          | ---                      |
-| `npm dev`    | Start development server |
-| `npm build`  | Build for production     |
+| Command     | Description              |
+| ----------- | ------------------------ |
+| `npm dev`   | Start development server |
+| `npm build` | Build for production     |
