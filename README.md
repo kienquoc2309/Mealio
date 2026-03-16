@@ -2,16 +2,16 @@
 
 A food ordering platform where users can browse foods, add items to a cart, place orders, and pay through supported payment providers.
 
-**Demo:** [https://mealio-ashen.vercel.app](https://mealio-ashen.vercel.app/)
+**Demo:** [https://mealio-food.vercel.app](https://mealio-food.vercel.app)
 
 ## Demo Accounts
 
 You can log in using Google, Facebook, or the following test accounts:
 
-| Role  | Email              | Password    |
-| ----- | ------------------ | ----------- |
-| User  | user@mealio.com    | @user1234   |
-| Admin | admin@mealio.com   | @admin1234  |
+| Role  | Email            | Password   |
+| ----- | ---------------- | ---------- |
+| User  | user@mealio.com  | @user1234  |
+| Admin | admin@mealio.com | @admin1234 |
 
 ### Test Payment (Stripe)
 
