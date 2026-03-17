@@ -19,11 +19,33 @@ You can log in using Google, Facebook, or the following test accounts:
 | ----- | ---------------- | ------------ | --------------- |
 | Visa  | 4242424242424242 | Any 3 digits | Any future date |
 
+### Test Payment (VNPay)
+
+| Field        | Value               |
+| ------------ | ------------------- |
+| Bank         | NCB                 |
+| Card Number  | 9704198526191432198 |
+| Owner        | NGUYEN VAN A        |
+| Release Date | 07/15               |
+| OTP/Password | 123456              |
+
+### Test Payment (MoMo)
+
+Use **Credit Card** method on the MoMo payment page.
+
+| Field       | Value            |
+| ----------- | ---------------- |
+| Name        | NGUYEN VAN A     |
+| Card Number | 5200000000001096 |
+| Expiry Date | 05/26            |
+| CVC         | 111              |
+| OTP         | 1234             |
+
 ## Tech Stack
 
 - **Backend:** NestJS, MongoDB, Mongoose
 - **Frontend:** Vue.js, Pinia, Tailwind CSS, Vite
-- **Payments:** Stripe
+- **Payments:** Stripe, VNPay, MoMo
 - **Auth:** JWT, Google OAuth, Facebook OAuth
 - **Email:** Nodemailer (Gmail SMTP)
 
@@ -65,6 +87,13 @@ Fill in the required environment variables in `.env`:
 | `CLOUD_NAME`, `CLOUD_KEY`, `CLOUD_SECRET`  | Cloudinary credentials for image uploads        |
 | `STRIPE_SECRET_KEY`                        | Stripe secret key for payments                  |
 | `STRIPE_WEBHOOK_SECRET`                    | Stripe webhook signing secret                   |
+| `VNP_TMN_CODE`                             | VNPay merchant terminal code                    |
+| `VNP_HASH_SECRET`                          | VNPay HMAC secret key                           |
+| `VNP_URL`                                  | VNPay gateway URL (sandbox or production)       |
+| `MOMO_PARTNER_CODE`                        | MoMo partner code                               |
+| `MOMO_ACCESS_KEY`                          | MoMo access key                                 |
+| `MOMO_SECRET_KEY`                          | MoMo HMAC secret key                            |
+| `MOMO_API_URL`                             | MoMo API URL (test or production)               |
 | `SMTP_USER`, `SMTP_PASS`                   | Gmail SMTP credentials for sending emails       |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth 2.0 credentials                    |
 | `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`   | Facebook OAuth credentials                      |
@@ -89,7 +118,7 @@ npm install
 Start the frontend development server:
 
 ```bash
-npm dev
+npm run dev
 ```
 
 The frontend will run at **http://localhost:5173**.
@@ -117,7 +146,7 @@ Mealio/
 │           ├── email/       # Email service
 │           ├── foods/       # Food menu management
 │           ├── orders/      # Order lifecycle
-│           ├── payments/    # Stripe payment integration
+│           ├── payments/    # Payment integrations (Stripe, VNPay, MoMo)
 │           └── users/       # User management
 ├── frontend/
 │   └── src/app/
@@ -144,7 +173,7 @@ Mealio/
 
 ### Frontend
 
-| Command     | Description              |
-| ----------- | ------------------------ |
-| `npm dev`   | Start development server |
-| `npm build` | Build for production     |
+| Command         | Description              |
+| --------------- | ------------------------ |
+| `npm run dev`   | Start development server |
+| `npm run build` | Build for production     |
