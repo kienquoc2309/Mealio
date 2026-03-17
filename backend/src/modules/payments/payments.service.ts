@@ -136,13 +136,23 @@ export class PaymentsService {
     };
 
     const sortedParams = this.sortVnpParams(params);
-    const signData = new URLSearchParams(sortedParams).toString();
+
+    // Sign using raw values (no URL encoding) — VNPay requires this
+    const signData = Object.entries(sortedParams)
+      .map(([key, value]) => `${key}=${value}`)
+      .join('&');
     const hmac = crypto.createHmac('sha512', hashSecret);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
-    sortedParams['vnp_SecureHash'] = signed;
+    // Build URL with proper encoding
+    const queryString = Object.entries(sortedParams)
+      .map(
+        ([key, value]) =>
+          `${encodeURIComponent(key)}=${encodeURIComponent(value)}`,
+      )
+      .join('&');
 
-    return `${vnpUrl}?${new URLSearchParams(sortedParams).toString()}`;
+    return `${vnpUrl}?${queryString}&vnp_SecureHash=${signed}`;
   }
 
   verifyVnpayIpn(query: Record<string, string>): {
@@ -160,7 +170,9 @@ export class PaymentsService {
     delete params['vnp_SecureHashType'];
 
     const sortedParams = this.sortVnpParams(params);
-    const signData = new URLSearchParams(sortedParams).toString();
+    const signData = Object.entries(sortedParams)
+      .map(([key, value]) => `${key}=${value}`)
+      .join('&');
     const hmac = crypto.createHmac('sha512', hashSecret);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
