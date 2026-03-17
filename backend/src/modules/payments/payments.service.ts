@@ -1,12 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
+import * as crypto from 'crypto';
 
 export interface CheckoutItem {
   name: string;
   price: number;
   quantity: number;
   image: string;
+}
+
+export interface MomoIpnPayload {
+  partnerCode: string;
+  orderId: string;
+  requestId: string;
+  amount: number;
+  orderInfo: string;
+  orderType: string;
+  transId: number;
+  resultCode: number;
+  message: string;
+  payType: string;
+  responseTime: number;
+  extraData: string;
+  signature: string;
 }
 
 @Injectable()
@@ -77,5 +94,227 @@ export class PaymentsService {
       signature,
       webhookSecret,
     );
+  }
+
+  // ── VNPay ──────────────────────────────────────────────────────────
+
+  createVnpayPaymentUrl(
+    orderId: string,
+    totalAmount: number,
+    ipAddr: string,
+  ): string {
+    const tmnCode = this.configService.get<string>('VNP_TMN_CODE')!;
+    const hashSecret = this.configService.get<string>('VNP_HASH_SECRET')!;
+    const vnpUrl = this.configService.get<string>(
+      'VNP_URL',
+      'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
+    );
+    const frontendUrl = this.configService.get<string>(
+      'app.frontendUrl',
+      'http://localhost:5173',
+    );
+
+    const createDate = this.formatVnpDate(new Date());
+    const expireDate = this.formatVnpDate(
+      new Date(Date.now() + 15 * 60 * 1000),
+    );
+
+    const params: Record<string, string> = {
+      vnp_Version: '2.1.0',
+      vnp_Command: 'pay',
+      vnp_TmnCode: tmnCode,
+      vnp_Locale: 'vn',
+      vnp_CurrCode: 'VND',
+      vnp_TxnRef: orderId,
+      vnp_OrderInfo: `Thanh toan don hang ${orderId}`,
+      vnp_OrderType: 'food',
+      vnp_Amount: String(totalAmount * 100),
+      vnp_ReturnUrl: `${frontendUrl}/payment/vnpay-return`,
+      vnp_IpAddr: ipAddr,
+      vnp_CreateDate: createDate,
+      vnp_ExpireDate: expireDate,
+    };
+
+    const sortedParams = this.sortVnpParams(params);
+    const signData = new URLSearchParams(sortedParams).toString();
+    const hmac = crypto.createHmac('sha512', hashSecret);
+    const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
+
+    sortedParams['vnp_SecureHash'] = signed;
+
+    return `${vnpUrl}?${new URLSearchParams(sortedParams).toString()}`;
+  }
+
+  verifyVnpayIpn(query: Record<string, string>): {
+    isValid: boolean;
+    orderId: string;
+    transactionId: string;
+    responseCode: string;
+  } {
+    const hashSecret = this.configService.get<string>('VNP_HASH_SECRET')!;
+    const secureHash = query['vnp_SecureHash'];
+
+    // Remove hash fields before re-signing
+    const params = { ...query };
+    delete params['vnp_SecureHash'];
+    delete params['vnp_SecureHashType'];
+
+    const sortedParams = this.sortVnpParams(params);
+    const signData = new URLSearchParams(sortedParams).toString();
+    const hmac = crypto.createHmac('sha512', hashSecret);
+    const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
+
+    return {
+      isValid: secureHash === signed,
+      orderId: query['vnp_TxnRef'] ?? '',
+      transactionId: query['vnp_TransactionNo'] ?? '',
+      responseCode: query['vnp_ResponseCode'] ?? '',
+    };
+  }
+
+  // ── MoMo ──────────────────────────────────────────────────────────
+
+  async createMomoPaymentUrl(
+    orderId: string,
+    totalAmount: number,
+  ): Promise<string> {
+    const partnerCode = this.configService.get<string>('MOMO_PARTNER_CODE')!;
+    const accessKey = this.configService.get<string>('MOMO_ACCESS_KEY')!;
+    const secretKey = this.configService.get<string>('MOMO_SECRET_KEY')!;
+    const momoApiUrl = this.configService.get<string>(
+      'MOMO_API_URL',
+      'https://test-payment.momo.vn/v2/gateway/api/create',
+    );
+    const backendUrl = this.configService.get<string>(
+      'app.backendUrl',
+      'http://localhost:5000',
+    );
+    const frontendUrl = this.configService.get<string>(
+      'app.frontendUrl',
+      'http://localhost:5173',
+    );
+
+    const requestId = `${orderId}_${Date.now()}`;
+    const orderInfo = `Thanh toan don hang ${orderId}`;
+    const redirectUrl = `${frontendUrl}/payment/momo-return`;
+    const ipnUrl = `${backendUrl}/orders/webhook/momo`;
+    const requestType = 'payWithMethod';
+    const extraData = '';
+    const autoCapture = true;
+    const lang = 'vi';
+
+    const rawSignature = [
+      `accessKey=${accessKey}`,
+      `amount=${totalAmount}`,
+      `extraData=${extraData}`,
+      `ipnUrl=${ipnUrl}`,
+      `orderId=${orderId}`,
+      `orderInfo=${orderInfo}`,
+      `partnerCode=${partnerCode}`,
+      `redirectUrl=${redirectUrl}`,
+      `requestId=${requestId}`,
+      `requestType=${requestType}`,
+    ].join('&');
+
+    const signature = crypto
+      .createHmac('sha256', secretKey)
+      .update(rawSignature)
+      .digest('hex');
+
+    const response = await fetch(momoApiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        partnerCode,
+        partnerName: 'Mealio',
+        storeId: partnerCode,
+        requestId,
+        amount: totalAmount,
+        orderId,
+        orderInfo,
+        redirectUrl,
+        ipnUrl,
+        lang,
+        requestType,
+        autoCapture,
+        extraData,
+        signature,
+      }),
+    });
+
+    const data = (await response.json()) as {
+      resultCode: number;
+      message: string;
+      payUrl: string;
+    };
+
+    if (data.resultCode !== 0) {
+      throw new Error(`MoMo error: ${data.message}`);
+    }
+
+    return data.payUrl;
+  }
+
+  verifyMomoIpn(body: MomoIpnPayload): {
+    isValid: boolean;
+    orderId: string;
+    transactionId: string;
+    resultCode: number;
+  } {
+    const secretKey = this.configService.get<string>('MOMO_SECRET_KEY')!;
+    const accessKey = this.configService.get<string>('MOMO_ACCESS_KEY')!;
+
+    const rawSignature = [
+      `accessKey=${accessKey}`,
+      `amount=${body.amount}`,
+      `extraData=${body.extraData}`,
+      `message=${body.message}`,
+      `orderId=${body.orderId}`,
+      `orderInfo=${body.orderInfo}`,
+      `orderType=${body.orderType}`,
+      `partnerCode=${body.partnerCode}`,
+      `payType=${body.payType}`,
+      `requestId=${body.requestId}`,
+      `responseTime=${body.responseTime}`,
+      `resultCode=${body.resultCode}`,
+      `transId=${body.transId}`,
+    ].join('&');
+
+    const expectedSignature = crypto
+      .createHmac('sha256', secretKey)
+      .update(rawSignature)
+      .digest('hex');
+
+    return {
+      isValid: body.signature === expectedSignature,
+      orderId: body.orderId ?? '',
+      transactionId: String(body.transId ?? ''),
+      resultCode: body.resultCode ?? -1,
+    };
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────────────
+
+  private sortVnpParams(
+    params: Record<string, string>,
+  ): Record<string, string> {
+    const sorted: Record<string, string> = {};
+    const keys = Object.keys(params).sort();
+    for (const key of keys) {
+      if (params[key] !== '' && params[key] !== undefined) {
+        sorted[key] = params[key];
+      }
+    }
+    return sorted;
+  }
+
+  private formatVnpDate(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const h = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    const s = String(date.getSeconds()).padStart(2, '0');
+    return `${y}${m}${d}${h}${min}${s}`;
   }
 }

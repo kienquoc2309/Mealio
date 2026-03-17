@@ -32,6 +32,7 @@ export class OrdersService {
       receiverName: string;
     },
     paymentMethod: string,
+    ipAddr: string = '127.0.0.1',
   ) {
     const user = await this.userModel
       .findById(userId)
@@ -96,6 +97,17 @@ export class OrdersService {
       await this.orderModel.findByIdAndUpdate(order._id, {
         sessionId: session.sessionId,
       });
+    } else if (paymentMethod === 'vnpay') {
+      paymentUrl = this.paymentsService.createVnpayPaymentUrl(
+        order._id.toString(),
+        totalAmount,
+        ipAddr,
+      );
+    } else if (paymentMethod === 'momo') {
+      paymentUrl = await this.paymentsService.createMomoPaymentUrl(
+        order._id.toString(),
+        totalAmount,
+      );
     }
 
     return {

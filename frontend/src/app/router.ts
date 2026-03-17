@@ -43,6 +43,18 @@ export const router = createRouter({
           meta: { requiresAuth: true },
         },
         {
+          path: 'payment/vnpay-return',
+          name: 'vnpay-return',
+          component: () => import('./pages/VnpayReturn.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'payment/momo-return',
+          name: 'momo-return',
+          component: () => import('./pages/MomoReturn.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
           path: 'admin',
           name: 'admin',
           component: () => import('./pages/AdminDashboard.vue'),

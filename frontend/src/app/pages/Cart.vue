@@ -21,8 +21,8 @@ const paymentMethod = ref<PaymentMethod>('stripe')
 
 const paymentOptions: { value: PaymentMethod; label: string; logo: string; description: string; comingSoon?: boolean }[] = [
   { value: 'stripe', label: 'Stripe', logo: '/stripe.svg', description: 'Credit / Debit Card' },
-  { value: 'vnpay', label: 'VNPay', logo: '/vnpay.svg', description: 'Vietnamese Bank Transfer', comingSoon: true },
-  { value: 'momo', label: 'MoMo', logo: '/momo.png', description: 'MoMo E-Wallet', comingSoon: true },
+  { value: 'vnpay', label: 'VNPay', logo: '/vnpay.svg', description: 'Vietnamese Bank Transfer' },
+  { value: 'momo', label: 'MoMo', logo: '/momo.png', description: 'MoMo E-Wallet' },
 ]
 
 const formatPhone = (raw: string): string => {

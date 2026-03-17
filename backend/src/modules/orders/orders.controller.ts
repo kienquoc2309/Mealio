@@ -18,6 +18,7 @@ import { UpdateStatusDto } from './dto/update-status.dto';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { AdminGuard } from '../../common/guards/admin.guard';
 import { PaymentsService } from '../payments/payments.service';
+import type { MomoIpnPayload } from '../payments/payments.service';
 import type { AuthenticatedRequest } from '../../common/interfaces/authenticated-request.interface';
 import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
@@ -37,10 +38,16 @@ export class OrdersController {
     @Req() req: AuthenticatedRequest,
     @Body() body: PlaceOrderDto,
   ) {
+    const ipAddr =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      req.socket.remoteAddress ||
+      '127.0.0.1';
+
     return this.ordersService.placeOrder(
       req.userId,
       body.address,
       body.paymentMethod,
+      ipAddr,
     );
   }
 
@@ -147,5 +154,49 @@ export class OrdersController {
     }
 
     return { received: true };
+  }
+
+  // VNPay IPN callback — no auth guard, verified by HMAC signature
+  @Get('webhook/vnpay')
+  @HttpCode(200)
+  async vnpayIpn(@Query() query: Record<string, string>) {
+    const result = this.paymentsService.verifyVnpayIpn(query);
+
+    if (!result.isValid) {
+      return { RspCode: '97', Message: 'Invalid signature' };
+    }
+
+    if (!result.orderId) {
+      return { RspCode: '01', Message: 'Order not found' };
+    }
+
+    const paymentStatus = result.responseCode === '00' ? 'paid' : 'failed';
+
+    await this.ordersService.updatePaymentStatus(
+      result.orderId,
+      paymentStatus,
+      result.transactionId,
+    );
+
+    return { RspCode: '00', Message: 'Confirm Success' };
+  }
+
+  // MoMo IPN callback — no auth guard, verified by HMAC signature
+  @Post('webhook/momo')
+  @HttpCode(204)
+  async momoIpn(@Body() body: MomoIpnPayload) {
+    const result = this.paymentsService.verifyMomoIpn(body);
+
+    if (!result.isValid || !result.orderId) {
+      return;
+    }
+
+    const paymentStatus = result.resultCode === 0 ? 'paid' : 'failed';
+
+    await this.ordersService.updatePaymentStatus(
+      result.orderId,
+      paymentStatus,
+      result.transactionId,
+    );
   }
 }
