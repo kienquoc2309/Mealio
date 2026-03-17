@@ -309,12 +309,14 @@ export class PaymentsService {
   }
 
   private formatVnpDate(date: Date): string {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    const h = String(date.getHours()).padStart(2, '0');
-    const min = String(date.getMinutes()).padStart(2, '0');
-    const s = String(date.getSeconds()).padStart(2, '0');
+    // VNPay requires Vietnam timezone (UTC+7)
+    const vnDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+    const y = vnDate.getUTCFullYear();
+    const m = String(vnDate.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(vnDate.getUTCDate()).padStart(2, '0');
+    const h = String(vnDate.getUTCHours()).padStart(2, '0');
+    const min = String(vnDate.getUTCMinutes()).padStart(2, '0');
+    const s = String(vnDate.getUTCSeconds()).padStart(2, '0');
     return `${y}${m}${d}${h}${min}${s}`;
   }
 }
