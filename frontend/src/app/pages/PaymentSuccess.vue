@@ -23,7 +23,7 @@ onMounted(async () => {
 
   // Retry a few times — the payment_intent.succeeded webhook may arrive
   // slightly after Stripe redirects the user back
-  const MAX_RETRIES = 5
+  const MAX_RETRIES = 8
   const RETRY_DELAY = 2000
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
@@ -45,8 +45,10 @@ onMounted(async () => {
     }
   }
 
+  // Stripe redirects to success_url only after payment succeeds,
+  // so show success even if the webhook hasn't updated the order yet
+  verified.value = true
   verifying.value = false
-  error.value = 'Payment verification failed. Please check your orders page for status updates.'
 })
 </script>
 

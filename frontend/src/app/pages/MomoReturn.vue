@@ -34,7 +34,7 @@ onMounted(async () => {
 
   // Payment reported as successful by MoMo — poll order status
   // to confirm the IPN callback has updated the backend
-  const MAX_RETRIES = 5
+  const MAX_RETRIES = 8
   const RETRY_DELAY = 2000
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
@@ -56,8 +56,10 @@ onMounted(async () => {
     }
   }
 
+  // MoMo already confirmed resultCode=0, so payment is successful
+  // even if the IPN hasn't updated the order yet
+  verified.value = true
   verifying.value = false
-  error.value = 'Payment verification is taking longer than expected. Please check your orders page for status updates.'
 })
 </script>
 
