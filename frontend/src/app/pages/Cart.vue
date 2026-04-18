@@ -19,9 +19,9 @@ const city = ref('')
 const phoneError = ref('')
 const paymentMethod = ref<PaymentMethod>('stripe')
 
-const paymentOptions: { value: PaymentMethod; label: string; logo: string; description: string; comingSoon?: boolean }[] = [
+const paymentOptions: { value: PaymentMethod; label: string; logo: string; description: string; comingSoon?: boolean; fixing?: boolean }[] = [
   { value: 'stripe', label: 'Stripe', logo: '/stripe.svg', description: 'Credit / Debit Card' },
-  { value: 'vnpay', label: 'VNPay', logo: '/vnpay.svg', description: 'Vietnamese Bank Transfer' },
+  { value: 'vnpay', label: 'VNPay', logo: '/vnpay.svg', description: 'Vietnamese Bank Transfer', fixing: true },
   { value: 'momo', label: 'MoMo', logo: '/momo.png', description: 'MoMo E-Wallet' },
 ]
 
@@ -302,24 +302,26 @@ const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(pri
               <button
                 v-for="option in paymentOptions"
                 :key="option.value"
-                @click="!option.comingSoon && (paymentMethod = option.value)"
-                :disabled="option.comingSoon"
+                @click="!option.comingSoon && !option.fixing && (paymentMethod = option.value)"
+                :disabled="option.comingSoon || option.fixing"
+                :title="option.fixing ? 'This feature is being fixed and will be available soon' : ''"
                 :class="[
                   'relative flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all',
-                  option.comingSoon
+                  option.comingSoon || option.fixing
                     ? 'border-gray-200 dark:border-[#263a32] bg-gray-50 dark:bg-[#101a16] opacity-60 cursor-not-allowed'
                     : paymentMethod === option.value
                       ? 'border-green-500 dark:border-green-500 bg-green-50 dark:bg-green-900/20'
                       : 'border-gray-200 dark:border-[#263a32] bg-white dark:bg-[#101a16] hover:border-green-200 dark:hover:border-green-800'
                 ]"
               >
-                <span v-if="option.comingSoon" class="absolute top-1.5 right-1.5 px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-[10px] rounded-md" :style="{ fontWeight: 700 }">Coming Soon</span>
+                <span v-if="option.fixing" class="absolute top-1.5 right-1.5 px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] rounded-md" :style="{ fontWeight: 700 }">Fixing — Coming Soon</span>
+                <span v-else-if="option.comingSoon" class="absolute top-1.5 right-1.5 px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-[10px] rounded-md" :style="{ fontWeight: 700 }">Coming Soon</span>
                 <div class="w-10 h-8 flex items-center justify-center flex-shrink-0">
-                  <img :src="option.logo" :alt="option.label" class="max-w-full max-h-full object-contain" />
+                  <img :src="option.logo" :alt="option.label" :class="['max-w-full max-h-full object-contain', option.fixing ? 'blur-[2px] grayscale' : '']" />
                 </div>
                 <div>
-                  <p :class="['text-sm', option.comingSoon ? 'text-gray-400 dark:text-[#5a7e6c]' : paymentMethod === option.value ? 'text-green-700 dark:text-green-400' : 'text-gray-900 dark:text-[#e2efe8]']" :style="{ fontWeight: 700 }">{{ option.label }}</p>
-                  <p :class="['text-xs', option.comingSoon ? 'text-gray-300 dark:text-[#4a6e5c]' : paymentMethod === option.value ? 'text-green-600 dark:text-green-500' : 'text-gray-400 dark:text-[#7a9e8c]']">{{ option.description }}</p>
+                  <p :class="['text-sm', option.comingSoon || option.fixing ? 'text-gray-400 dark:text-[#5a7e6c]' : paymentMethod === option.value ? 'text-green-700 dark:text-green-400' : 'text-gray-900 dark:text-[#e2efe8]']" :style="{ fontWeight: 700 }">{{ option.label }}</p>
+                  <p :class="['text-xs', option.comingSoon || option.fixing ? 'text-gray-300 dark:text-[#4a6e5c]' : paymentMethod === option.value ? 'text-green-600 dark:text-green-500' : 'text-gray-400 dark:text-[#7a9e8c]']">{{ option.fixing ? 'Temporarily unavailable' : option.description }}</p>
                 </div>
               </button>
             </div>

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import * as crypto from 'crypto';
@@ -28,6 +28,7 @@ export interface MomoIpnPayload {
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
   private stripe: Stripe;
 
   constructor(private configService: ConfigService) {
@@ -127,10 +128,10 @@ export class PaymentsService {
       vnp_CurrCode: 'VND',
       vnp_TxnRef: orderId,
       vnp_OrderInfo: `Thanh toan don hang ${orderId}`,
-      vnp_OrderType: 'food',
-      vnp_Amount: String(totalAmount * 100),
+      vnp_OrderType: 'other',
+      vnp_Amount: String(Math.round(totalAmount * 100)),
       vnp_ReturnUrl: `${frontendUrl}/payment/vnpay-return`,
-      vnp_IpAddr: ipAddr,
+      vnp_IpAddr: this.sanitizeIpv4(ipAddr),
       vnp_CreateDate: createDate,
       vnp_ExpireDate: expireDate,
     };
@@ -152,7 +153,16 @@ export class PaymentsService {
       )
       .join('&');
 
-    return `${vnpUrl}?${queryString}&vnp_SecureHash=${signed}`;
+    const paymentUrl = `${vnpUrl}?${queryString}&vnp_SecureHash=${signed}`;
+
+    this.logger.debug('[VNPay] createVnpayPaymentUrl');
+    this.logger.debug(`[VNPay] vnpUrl: ${vnpUrl}`);
+    this.logger.debug(`[VNPay] params: ${JSON.stringify(sortedParams)}`);
+    this.logger.debug(`[VNPay] signData: ${signData}`);
+    this.logger.debug(`[VNPay] signature: ${signed}`);
+    this.logger.debug(`[VNPay] paymentUrl: ${paymentUrl}`);
+
+    return paymentUrl;
   }
 
   verifyVnpayIpn(query: Record<string, string>): {
@@ -176,8 +186,17 @@ export class PaymentsService {
     const hmac = crypto.createHmac('sha512', hashSecret);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
+    const isValid = secureHash === signed;
+
+    this.logger.debug('[VNPay] verifyVnpayIpn');
+    this.logger.debug(`[VNPay] received query: ${JSON.stringify(query)}`);
+    this.logger.debug(`[VNPay] signData: ${signData}`);
+    this.logger.debug(`[VNPay] expectedSignature: ${signed}`);
+    this.logger.debug(`[VNPay] receivedSignature: ${secureHash}`);
+    this.logger.debug(`[VNPay] isValid: ${isValid}`);
+
     return {
-      isValid: secureHash === signed,
+      isValid,
       orderId: query['vnp_TxnRef'] ?? '',
       transactionId: query['vnp_TransactionNo'] ?? '',
       responseCode: query['vnp_ResponseCode'] ?? '',
@@ -318,6 +337,16 @@ export class PaymentsService {
       }
     }
     return sorted;
+  }
+
+  private sanitizeIpv4(ip: string): string {
+    if (!ip) return '127.0.0.1';
+    // Strip IPv4-mapped IPv6 prefix: ::ffff:1.2.3.4 → 1.2.3.4
+    const stripped = ip.replace(/^::ffff:/i, '');
+    // If still IPv4 (dotted quad), return it
+    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(stripped)) return stripped;
+    // Loopback or any IPv6 → fall back to IPv4 loopback (VNPay requires IPv4)
+    return '127.0.0.1';
   }
 
   private formatVnpDate(date: Date): string {
